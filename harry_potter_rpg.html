@@ -1080,7 +1080,16 @@ function updateParts(){parts=parts.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.lif
 function drawParts(){parts.forEach(p=>{wctx.globalAlpha=p.life;wctx.fillStyle=p.color;wctx.beginPath();wctx.arc(p.x,p.y,3*p.life,0,6.28);wctx.fill();});wctx.globalAlpha=1;}
 
 // ── TOAST ─────────────────────────────────────────
-function toast(msg,dur){dur=dur||2500;const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),dur);}
+function toast(msg,dur){
+  dur=dur||2500;
+  const t=document.getElementById('toast');
+  const zp=document.getElementById('zprompt');
+  const np=document.getElementById('npcPrompt');
+  const promptOpen=(zp&&zp.style.display!=='none')||(np&&np.style.display!=='none');
+  t.style.bottom=promptOpen?'350px':'175px';
+  t.textContent=msg;t.classList.add('on');clearTimeout(t._t);
+  t._t=setTimeout(function(){t.classList.remove('on');},dur);
+}
 
 // ── HUD ───────────────────────────────────────────
 function updateHUD(){
