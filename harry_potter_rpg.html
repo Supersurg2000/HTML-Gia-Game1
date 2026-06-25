@@ -990,6 +990,20 @@ function touchB(){
   el.addEventListener('pointerleave',()=>el.classList.remove('pressed'));
 });
 
+// iOS double-tap zoom: browser uses ~350ms window, our global listener only catches <300ms.
+// Add a 500ms touchend preventDefault on game control areas — safe because movement
+// uses pointerdown, not click, so blocking touchend here doesn't break D-pad input.
+(function(){
+  var _lt2=0;
+  function blockTapZoom(e){var now=Date.now();if(now-_lt2<500){e.preventDefault();}_lt2=now;}
+  var dp=document.getElementById('dpad');
+  var gb=document.getElementById('gamebtns');
+  var cv=document.getElementById('world');
+  if(dp)dp.addEventListener('touchend',blockTapZoom,{passive:false});
+  if(gb)gb.addEventListener('touchend',blockTapZoom,{passive:false});
+  if(cv)cv.addEventListener('touchend',blockTapZoom,{passive:false});
+})();
+
 // ── AUDIO ─────────────────────────────────────────
 let AC=null;
 function initAudio(){if(!AC)try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
