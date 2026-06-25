@@ -45,7 +45,7 @@ canvas{display:block}
 .eq-pill.empty{border-style:dashed;opacity:.4;color:var(--muted)}
 #minimap{position:fixed;top:52px;right:12px;z-index:50;border:2px solid var(--border);border-radius:4px;background:#050210}
 #minimap.off{display:none}
-#zprompt{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(5,2,16,.95);border:2px solid var(--gold);border-radius:8px;padding:14px 24px;text-align:center;font-family:'Cinzel',serif;display:none;min-width:260px}
+#zprompt{position:fixed;bottom:210px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(5,2,16,.95);border:2px solid var(--gold);border-radius:8px;padding:14px 24px;text-align:center;font-family:'Cinzel',serif;display:none;min-width:260px}
 #zprompt h3{color:var(--gold);font-size:16px;margin-bottom:6px}
 #zprompt p{color:var(--muted);font-size:11px;margin-bottom:10px}
 .zbtn{background:linear-gradient(135deg,#2a1a50,#1a0a30);border:1px solid var(--gold);color:var(--gold);padding:7px 20px;border-radius:4px;cursor:pointer;font-family:'Cinzel',serif;font-size:12px;margin:0 4px}
@@ -173,7 +173,7 @@ canvas{display:block}
   <button class="zbtn no" onclick="G.closePrompt()">Back</button>
 </div>
 
-<div id="npcPrompt" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(5,2,16,.97);border:2px solid var(--gold);border-radius:8px;padding:14px 22px;text-align:center;font-family:'Cinzel',serif;display:none;min-width:260px;max-width:340px;box-shadow:0 4px 24px #0008">
+<div id="npcPrompt" style="position:fixed;bottom:210px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(5,2,16,.97);border:2px solid var(--gold);border-radius:8px;padding:14px 22px;text-align:center;font-family:'Cinzel',serif;display:none;min-width:260px;max-width:340px;box-shadow:0 4px 24px #0008">
   <div id="npcPIcon" style="font-size:26px;margin-bottom:3px"></div>
   <div id="npcPName" style="color:var(--gold);font-size:13px;font-weight:700;margin-bottom:4px"></div>
   <div id="npcPMsg" style="color:var(--muted);font-size:10px;margin-bottom:5px;line-height:1.6"></div>
@@ -261,6 +261,7 @@ canvas{display:block}
     <div class="clog" id="clog"></div>
     <div class="sgrid" id="sgrid"></div>
     <div class="arow">
+      <button class="btn sm" onclick="B.strike()" style="background:#2a1a44;border-color:#6644aa">⚔ Strike</button>
       <button class="btn sm grn" id="btnItem" onclick="B.openBattleBag()">🎒 Bag</button>
       <button class="btn sm red" onclick="B.flee()">🏃 Flee</button>
     </div>
@@ -1344,6 +1345,23 @@ const B={
     P.inventory[k]--;
     updateHUD();renderBattle();
     btlBusy=true;lockBtl(true);setTimeout(function(){enemyTurn();},700);
+  },
+  strike:function(){
+    if(!BS||btlBusy)return;
+    btlBusy=true;lockBtl(true);
+    const base=Math.floor(P.atk*.7),high=Math.floor(P.atk*1.15);
+    let dmg=base+Math.floor(Math.random()*(high-base+1));
+    const atkBonus=(P.perks.includes('gryff_atk')?.1:0)+(P.perks.includes('atk_up')?.1:0);
+    dmg=Math.floor(dmg*(1+atkBonus));
+    const crit=Math.random()<(P.crit+(P.perks.includes('crit_boost')?.08:0));
+    if(crit)dmg=Math.floor(dmg*1.75);
+    dmg=Math.max(1,dmg-(BS.enemy.def||0));
+    if(BS.enemy.curHp>0&&BS.playerShield){BS.playerShield=false;}
+    BS.enemy.curHp=Math.max(0,BS.enemy.curHp-dmg);
+    if(crit){note(2200,.03,'square',.16);setTimeout(function(){sfx('spellImpact');},25);}else{sfx('spellImpact');}
+    addLog('⚔ Basic strike — '+dmg+(crit?' CRIT!':'')+' dmg!','ld');
+    updateHUD();renderBattle();
+    setTimeout(function(){if(chkEnd())return;enemyTurn();},700);
   },
   flee:function(){
     if(!BS||btlBusy)return;
