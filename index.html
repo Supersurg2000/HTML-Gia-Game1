@@ -1546,7 +1546,7 @@ function renderSlotList(){
       const cvs=document.createElement('canvas');cvs.width=48;cvs.height=60;
       cvs.style.cssText='border-radius:6px;background:#050210;border:1px solid '+hc+'55;flex-shrink:0';
       card.appendChild(cvs);
-      setTimeout(function(){try{drawWizard(cvs.getContext('2d'),24,30,'down',0,hc,false,p.gender||'boy');}catch(e){}},0);
+      setTimeout(function(){try{var ctx2=cvs.getContext('2d');ctx2.save();ctx2.scale(.8,.8);drawWizard(ctx2,30,61,'down',0,hc,false,p.gender||'boy');ctx2.restore();}catch(e){}},0);
       const info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
       info.innerHTML='<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">'+
         '<span style="font-size:10px;color:var(--gold);font-weight:700">Slot '+n+'</span>'+
