@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>Hogwarts Adventure</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <style>
@@ -907,10 +907,7 @@ function mkPlayer(name,house,gender){
     inventory:{wiggenweld:2},status:[],defeatedBosses:[],
     luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
   pl.hp=pl.maxHp;pl.mp=pl.maxMp;
-  if(house==='r')pl.spells.push('wingardium','accio');
   if(house==='h')pl.inventory.wiggenweld=(pl.inventory.wiggenweld||0)+3;
-  const houseStarter={g:'incendio',s:'serpensortia',r:'silencio',h:'herbivicus'};
-  if(houseStarter[house]){pl.spells.push(houseStarter[house]);pl.equippedSpells.push(houseStarter[house]);}
   return pl;
 }
 
@@ -1478,12 +1475,6 @@ function getSlotData(n){const r=localStorage.getItem(slotKey(n));return r?JSON.p
 function migrateOldSave(){const old=localStorage.getItem('hpa2');if(!old)return;try{const p=JSON.parse(old);if(!getSlotData(1))localStorage.setItem(slotKey(1),JSON.stringify({player:p,savedAt:Date.now()}));}catch(e){}localStorage.removeItem('hpa2');}
 function sanitizePlayer(p){
   if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};
-  // Backfill house starter for old saves that pre-date house spells
-  const houseStarter={g:'incendio',s:'serpensortia',r:'silencio',h:'herbivicus'};
-  const hs=houseStarter[p.house];
-  if(hs&&!p.spells.includes(hs))p.spells.push(hs);
-  // Ravenclaw bonus spells
-  if(p.house==='r'){['wingardium','accio'].forEach(function(k){if(!p.spells.includes(k))p.spells.push(k);});}
   // Rebuild equippedSpells
   if(!p.equippedSpells||!p.equippedSpells.length)p.equippedSpells=p.spells.slice(0,6);
   p.equippedSpells=p.equippedSpells.filter(function(k){return p.spells.includes(k);});
