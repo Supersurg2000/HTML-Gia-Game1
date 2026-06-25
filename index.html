@@ -451,19 +451,43 @@ canvas{display:block}
 <script>
 // ── ZOOM / DOUBLE-TAP PREVENTION ─────────────────
 (function(){
-  // Block pinch-zoom gestures (iOS Safari specific)
-  document.addEventListener('gesturestart',function(e){e.preventDefault();},{passive:false});
+  // iOS Safari: block native gesture events
+  document.addEventListener('gesturestart', function(e){e.preventDefault();},{passive:false});
   document.addEventListener('gesturechange',function(e){e.preventDefault();},{passive:false});
-  document.addEventListener('gestureend',function(e){e.preventDefault();},{passive:false});
-  // Block multi-finger touchmove (pinch on non-Safari)
-  document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});
-  // Block double-tap zoom by detecting two rapid taps
+  document.addEventListener('gestureend',  function(e){e.preventDefault();},{passive:false});
+  // Block pinch BEFORE it starts (touchstart with 2+ fingers)
+  document.addEventListener('touchstart',function(e){
+    if(e.touches.length>1)e.preventDefault();
+  },{passive:false});
+  // Block pinch during move
+  document.addEventListener('touchmove',function(e){
+    if(e.touches.length>1)e.preventDefault();
+  },{passive:false});
+  // Chrome/Android: pinch zoom reported as wheel+ctrlKey
+  document.addEventListener('wheel',function(e){
+    if(e.ctrlKey)e.preventDefault();
+  },{passive:false});
+  // Block double-tap zoom
   var _lt=0;
   document.addEventListener('touchend',function(e){
     var now=Date.now();
-    if(now-_lt<320){e.preventDefault();}
+    if(now-_lt<300){e.preventDefault();}
     _lt=now;
   },{passive:false});
+  // Set scrollable overlays to pan-only (no zoom inside scroll areas)
+  document.querySelectorAll('[style*="overflow-y"]').forEach(function(el){
+    el.style.touchAction='pan-y';
+  });
+  // Auto-reset viewport if page gets stuck zoomed (orientation change / focus regained)
+  function _resetVP(){
+    var vp=document.querySelector('meta[name="viewport"]');
+    if(vp){vp.setAttribute('content','width=device-width,initial-scale=1.0,user-scalable=no');
+    // Force re-read by toggling then restoring
+    setTimeout(function(){vp.setAttribute('content','width=device-width,initial-scale=1.0,user-scalable=no');},50);}
+  }
+  window.addEventListener('orientationchange',function(){setTimeout(_resetVP,300);});
+  window.addEventListener('focus',_resetVP);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)_resetVP();});
 })();
 // ── TILE TYPES ──────────────────────────────────
 const T={G:0,DG:1,P:2,W:3,FT:4,DT:5,WA:6,CW:7,CF:8,DO:9,SH:10,QP:11,FL:12,RK:13,GR:14,PO:15,FE:16,BR:17};
