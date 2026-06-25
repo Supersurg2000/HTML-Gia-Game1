@@ -10,7 +10,7 @@
 :root{--gold:#c9a227;--panel:#1a1030;--border:#3a2060;--text:#e8dfc8;--muted:#8878aa}
 body{background:#000;overflow:hidden;font-family:'IM Fell English',Georgia,serif;color:var(--text);touch-action:none}
 canvas{display:block}
-#world{position:fixed;top:0;left:0}
+#world{position:fixed;top:0;left:0;touch-action:none}
 #hud{position:fixed;top:0;left:0;right:0;z-index:50;background:linear-gradient(180deg,rgba(5,2,16,.92),transparent);padding:8px 14px;display:flex;align-items:center;gap:10px;overflow:hidden}
 #hud.off{display:none}
 .hname{font-family:'Cinzel',serif;font-size:13px;color:var(--gold);white-space:nowrap}
@@ -482,16 +482,27 @@ canvas{display:block}
   document.querySelectorAll('[style*="overflow-y"]').forEach(function(el){
     el.style.touchAction='pan-y';
   });
-  // Auto-reset viewport if page gets stuck zoomed (orientation change / focus regained)
+  // Auto-reset viewport if page gets stuck zoomed
   function _resetVP(){
     var vp=document.querySelector('meta[name="viewport"]');
-    if(vp){vp.setAttribute('content','width=device-width,initial-scale=1.0,user-scalable=no');
-    // Force re-read by toggling then restoring
-    setTimeout(function(){vp.setAttribute('content','width=device-width,initial-scale=1.0,user-scalable=no');},50);}
+    if(!vp)return;
+    vp.setAttribute('content','width=device-width,initial-scale=1.0,user-scalable=no');
+    window.scrollTo(0,0);
+    setTimeout(function(){vp.setAttribute('content','width=device-width,initial-scale=1.0,user-scalable=no');window.scrollTo(0,0);},50);
+    setTimeout(function(){vp.setAttribute('content','width=device-width,initial-scale=1.0,user-scalable=no');window.scrollTo(0,0);},400);
   }
-  window.addEventListener('orientationchange',function(){setTimeout(_resetVP,300);});
+  window.addEventListener('orientationchange',function(){setTimeout(_resetVP,100);setTimeout(_resetVP,500);setTimeout(_resetVP,1000);});
   window.addEventListener('focus',_resetVP);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)_resetVP();});
+  // Detect zoom via visualViewport and auto-correct
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',function(){
+      if(window.visualViewport.scale>1.05){setTimeout(_resetVP,100);}
+    });
+    window.visualViewport.addEventListener('scroll',function(){
+      if(window.visualViewport.scale>1.05){_resetVP();}
+    });
+  }
 })();
 // ── TILE TYPES ──────────────────────────────────
 const T={G:0,DG:1,P:2,W:3,FT:4,DT:5,WA:6,CW:7,CF:8,DO:9,SH:10,QP:11,FL:12,RK:13,GR:14,PO:15,FE:16,BR:17};
@@ -1084,13 +1095,18 @@ function updateParts(){parts=parts.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.lif
 function drawParts(){parts.forEach(p=>{wctx.globalAlpha=p.life;wctx.fillStyle=p.color;wctx.beginPath();wctx.arc(p.x,p.y,3*p.life,0,6.28);wctx.fill();});wctx.globalAlpha=1;}
 
 // ── TOAST ─────────────────────────────────────────
+function syncToast(){
+  var t=document.getElementById('toast');
+  var zp=document.getElementById('zprompt');
+  var np=document.getElementById('npcPrompt');
+  if(!t)return;
+  var promptOpen=(zp&&zp.style.display!=='none')||(np&&np.style.display!=='none');
+  t.style.bottom=promptOpen?'350px':'175px';
+}
 function toast(msg,dur){
   dur=dur||2500;
   const t=document.getElementById('toast');
-  const zp=document.getElementById('zprompt');
-  const np=document.getElementById('npcPrompt');
-  const promptOpen=(zp&&zp.style.display!=='none')||(np&&np.style.display!=='none');
-  t.style.bottom=promptOpen?'350px':'175px';
+  syncToast();
   t.textContent=msg;t.classList.add('on');clearTimeout(t._t);
   t._t=setTimeout(function(){t.classList.remove('on');},dur);
 }
@@ -1197,6 +1213,7 @@ function showZonePrompt(z){
   document.getElementById('zpdesc').textContent=locked?'Requires Year '+z.lockYear+' (you are Year '+P.year+').':z.desc;
   document.getElementById('zpyes').disabled=!!locked;
   el.style.display='block';
+  syncToast();
 }
 
 // ── ZONE ENTRY ────────────────────────────────────
@@ -2317,6 +2334,7 @@ function showNPCPrompt(npc){
     '⚔️ Earn bonus XP & Galleons':
     '🏆 Win to learn: '+ch.rName+' — '+ch.rDesc;
   document.getElementById('npcPrompt').style.display='block';
+  syncToast();
 }
 
 function startNPCBattle(npc){
