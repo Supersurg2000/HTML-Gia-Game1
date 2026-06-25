@@ -1,0 +1,2650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Hogwarts Adventure</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--gold:#c9a227;--panel:#1a1030;--border:#3a2060;--text:#e8dfc8;--muted:#8878aa}
+body{background:#000;overflow:hidden;font-family:'IM Fell English',Georgia,serif;color:var(--text);touch-action:none}
+canvas{display:block}
+#world{position:fixed;top:0;left:0}
+#hud{position:fixed;top:0;left:0;right:0;z-index:50;background:linear-gradient(180deg,rgba(5,2,16,.92),transparent);padding:8px 14px;display:flex;align-items:center;gap:10px}
+#hud.off{display:none}
+.hname{font-family:'Cinzel',serif;font-size:13px;color:var(--gold);white-space:nowrap}
+.bars{display:flex;flex-direction:column;gap:3px;flex:1;max-width:240px}
+.brow{display:flex;align-items:center;gap:5px}
+.blbl{font-size:9px;color:var(--muted);width:18px;text-align:right;font-family:'Cinzel',serif}
+.bbg{flex:1;height:9px;background:#0d081799;border-radius:8px;overflow:hidden;border:1px solid #ffffff18}
+.bfill{height:100%;border-radius:8px;transition:width .35s}
+.bfill.hp{background:linear-gradient(90deg,#991111,#ee3333)}
+.bfill.mp{background:linear-gradient(90deg,#1133aa,#3377ee)}
+.bfill.xp{background:linear-gradient(90deg,#886611,#ccaa22)}
+.bval{font-size:9px;color:var(--muted);min-width:52px;font-family:'Cinzel',serif}
+.hlv{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:3px 8px;font-family:'Cinzel',serif;font-size:11px;color:var(--gold)}
+.hgold{font-size:11px;color:#ddaa22;font-family:'Cinzel',serif}
+.hyr{font-size:10px;color:var(--muted);font-family:'Cinzel',serif}
+.htime{font-size:10px;color:#aabbdd;font-family:'Cinzel',serif;letter-spacing:.5px}
+#menuBtn{margin-left:auto;background:rgba(5,2,16,.85);border:1.5px solid var(--border);border-radius:20px;color:var(--gold);font-family:'Cinzel',serif;font-size:11px;padding:5px 13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+#menuBtn:hover{border-color:var(--gold);background:rgba(20,10,50,.95);box-shadow:0 0 8px rgba(201,162,39,.3)}
+.sc{background:#0d0826;border:1.5px solid var(--border);border-radius:8px;padding:12px 10px;cursor:pointer;transition:all .15s;text-align:center;user-select:none;position:relative}
+.sc:hover{border-color:#8855cc;transform:translateY(-2px);box-shadow:0 4px 16px #0000aa33}
+.sc.eq{border-color:var(--gold);background:rgba(201,162,39,.1);box-shadow:0 0 12px rgba(201,162,39,.2)}
+.sc.eq:hover{border-color:#ffdd55;transform:translateY(-2px)}
+.sc-icon{font-size:26px;margin-bottom:5px}
+.sc-name{font-family:'Cinzel',serif;font-size:10px;color:var(--gold);font-weight:700;margin-bottom:3px}
+.sc-cost{font-size:9px;color:var(--muted);margin-bottom:2px}
+.sc-dmg{font-size:9px;color:#9988bb}
+.sc-badge{position:absolute;top:6px;right:6px;font-size:8px;background:var(--gold);color:#050210;border-radius:8px;padding:1px 5px;font-family:'Cinzel',serif;font-weight:700}
+.sc.swap{border-color:#ffaa33!important;background:rgba(255,170,30,.13)!important;animation:sc-pulse .9s ease-in-out infinite}
+.sc.swap-target{border-color:#ff4444!important;background:rgba(255,40,40,.08)!important}
+@keyframes sc-pulse{0%,100%{box-shadow:0 0 14px rgba(255,170,30,.3)}50%{box-shadow:0 0 28px rgba(255,170,30,.65)}}
+.eq-pill{background:rgba(201,162,39,.18);border:1px solid var(--gold);border-radius:12px;padding:3px 9px;font-size:10px;color:var(--gold);font-family:'Cinzel',serif;display:inline-flex;align-items:center;gap:4px}
+.eq-pill.empty{border-style:dashed;opacity:.4;color:var(--muted)}
+#minimap{position:fixed;top:52px;right:12px;z-index:50;border:2px solid var(--border);border-radius:4px;background:#050210}
+#minimap.off{display:none}
+#zprompt{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(5,2,16,.95);border:2px solid var(--gold);border-radius:8px;padding:14px 24px;text-align:center;font-family:'Cinzel',serif;display:none;min-width:260px}
+#zprompt h3{color:var(--gold);font-size:16px;margin-bottom:6px}
+#zprompt p{color:var(--muted);font-size:11px;margin-bottom:10px}
+.zbtn{background:linear-gradient(135deg,#2a1a50,#1a0a30);border:1px solid var(--gold);color:var(--gold);padding:7px 20px;border-radius:4px;cursor:pointer;font-family:'Cinzel',serif;font-size:12px;margin:0 4px}
+.zbtn:hover{background:linear-gradient(135deg,#3a2a60,#2a1a40)}
+.zbtn.no{border-color:var(--muted);color:var(--muted)}
+.zbtn:disabled{opacity:.4;cursor:not-allowed}
+#dpad{position:fixed;bottom:22px;left:18px;z-index:60;display:none;touch-action:none}
+.dp-grid{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px);gap:3px}
+.dp{width:54px;height:54px;background:rgba(0,0,0,.55);border:2px solid rgba(200,162,39,.4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+.dp:active,.dp.pressed{background:rgba(200,162,39,.32);border-color:rgba(200,162,39,.85);box-shadow:0 0 14px rgba(200,162,39,.35),inset 0 1px 0 rgba(255,255,255,.1)}
+.dp-center{background:rgba(200,162,39,.08)!important;border-color:rgba(200,162,39,.2)!important;pointer-events:none;font-size:14px;color:rgba(200,162,39,.5)}
+.dp-empty{opacity:0;pointer-events:none}
+#gamebtns{position:fixed;bottom:22px;right:12px;z-index:60;display:none;touch-action:none}
+.gpad-row{display:flex;gap:12px;align-items:center;justify-content:flex-end}
+.gpad-lbl{display:flex;justify-content:space-between;padding:4px 6px 0;font-family:'Cinzel',serif;font-size:9px;color:rgba(200,162,39,.5);letter-spacing:1px}
+.gpad-btn{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-family:'Cinzel',serif;font-weight:bold;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;border:2px solid;backdrop-filter:blur(6px);box-shadow:0 3px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12);transition:box-shadow .1s}
+.btn-a{background:rgba(20,80,20,.75);border-color:rgba(80,200,80,.55);color:#a0ffb0;box-shadow:0 0 12px rgba(80,200,80,.2),0 3px 10px rgba(0,0,0,.5)}
+.btn-a:active,.btn-a.pressed{background:rgba(40,140,40,.85);border-color:rgba(120,255,120,.8);box-shadow:0 0 22px rgba(80,200,80,.5),inset 0 1px 0 rgba(255,255,255,.15)}
+.btn-b{background:rgba(80,18,18,.75);border-color:rgba(200,55,55,.55);color:#ffb0b0;box-shadow:0 0 12px rgba(200,55,55,.2),0 3px 10px rgba(0,0,0,.5)}
+.btn-b:active,.btn-b.pressed{background:rgba(140,35,35,.85);border-color:rgba(255,100,100,.8);box-shadow:0 0 22px rgba(200,55,55,.5),inset 0 1px 0 rgba(255,255,255,.15)}
+.overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(5,2,16,.92);backdrop-filter:blur(4px)}
+.overlay.off{display:none}
+.panel{background:#1a1030;border:2px solid var(--border);border-radius:10px;padding:26px;max-width:580px;width:95%;max-height:90vh;overflow-y:auto}
+.panel::-webkit-scrollbar{width:5px}.panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.panel h2{font-family:'Cinzel',serif;color:var(--gold);text-align:center;margin-bottom:18px;font-size:20px;letter-spacing:2px}
+#titleScr{background:linear-gradient(180deg,#0d0817,#1a0a2e)}
+.tlogo h1{font-family:'Cinzel Decorative',serif;font-size:clamp(26px,5vw,52px);color:var(--gold);text-shadow:0 0 30px #c9a22788;letter-spacing:3px;text-align:center}
+.tlogo p{font-family:'Cinzel',serif;font-size:13px;color:var(--muted);letter-spacing:5px;text-align:center;margin-top:6px}
+.wand{font-size:56px;text-align:center;display:block;animation:ws 3s ease-in-out infinite}
+@keyframes ws{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+.ifield{width:100%;background:#0d0817;border:1px solid var(--border);color:var(--text);font-family:'IM Fell English',serif;font-size:15px;padding:9px 12px;border-radius:4px;margin-bottom:16px;outline:none}
+.ifield:focus{border-color:var(--gold)}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.hcard{background:#0d0817;border:2px solid var(--border);border-radius:6px;padding:12px;cursor:pointer;transition:all .2s;text-align:center}
+.hcard.sel{border-color:var(--hc,var(--gold));background:var(--hbg,#1a1030)}
+.hcard h3{font-family:'Cinzel',serif;font-size:13px;color:var(--hc,var(--gold))}
+.hcard p{font-size:11px;color:var(--muted);margin-top:3px}
+.gender-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.gender-card{background:#0d0817;border:2px solid var(--border);border-radius:8px;padding:14px 10px;cursor:pointer;transition:all .2s;text-align:center}
+.gender-card:hover{border-color:#5a4080}
+.gender-card.sel{border-color:var(--gold);background:#1a1030;box-shadow:0 0 18px #c9a22733}
+.gender-card h3{font-family:'Cinzel',serif;font-size:13px;color:var(--gold);margin-top:6px}
+.gender-card p{font-size:11px;color:var(--muted);margin-top:2px}
+#avatarWrap{text-align:center;margin-bottom:14px}
+#avatarPreview{background:transparent;display:inline-block}
+.slbl{font-family:'Cinzel',serif;font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.btn{font-family:'Cinzel',serif;font-size:13px;padding:10px 26px;border:2px solid var(--gold);background:linear-gradient(135deg,#2a1a50,#1a0a30);color:var(--gold);cursor:pointer;letter-spacing:1px;border-radius:3px;margin:5px;transition:all .2s}
+.btn:hover{background:linear-gradient(135deg,#3a2a60,#2a1a40);box-shadow:0 0 16px #c9a22755}
+.btn.sm{font-size:11px;padding:7px 16px;margin:3px}
+.btn.red{border-color:#cc4444;color:#ff8888}
+.btn.grn{border-color:#22aa55;color:#66dd88}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.ezone{display:flex;flex-direction:column;align-items:center;padding:16px 0 8px;min-height:130px}
+.eport{font-size:clamp(48px,8vw,72px);animation:ei 3s ease-in-out infinite}
+@keyframes ei{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.ename{font-family:'Cinzel',serif;font-size:18px;margin-top:6px;letter-spacing:2px}
+.ehpw{width:100%;max-width:280px;margin-top:5px}
+.ehpbg{height:11px;background:#0d0817;border-radius:8px;overflow:hidden;border:1px solid #ffffff18}
+.ehpf{height:100%;background:linear-gradient(90deg,#991111,#ee3333);border-radius:8px;transition:width .45s}
+.ehpt{font-family:'Cinzel',serif;font-size:10px;color:var(--muted);text-align:center;margin-top:2px}
+.sbadges{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:5px}
+.sbadge{font-size:9px;padding:2px 7px;border-radius:8px;font-family:'Cinzel',serif}
+.sb-stun{background:#664400;color:#ffaa44;border:1px solid #ffaa44}
+.sb-burn{background:#662200;color:#ff6622;border:1px solid #ff6622}
+.sb-bleed{background:#660000;color:#ff4444;border:1px solid #ff4444}
+.sb-curse{background:#330066;color:#aa44ff;border:1px solid #aa44ff}
+.clog{background:#05021088;border:1px solid var(--border);border-radius:5px;padding:7px 9px;height:80px;overflow-y:auto;font-size:11px;line-height:1.7;margin:6px 0}
+.clog::-webkit-scrollbar{width:3px}.clog::-webkit-scrollbar-thumb{background:var(--border)}
+.le{animation:lef .25s ease}
+.lp{color:#88ccff}.le_{color:#ff8888}.ls{color:var(--gold)}.ld{color:#ff6644;font-weight:bold}.lh{color:#44dd88}.lm{color:var(--muted)}
+@keyframes lef{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:none}}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px;margin-bottom:6px}
+.sbtn{background:linear-gradient(135deg,#1a1040,#0d0820);border:1px solid var(--border);color:var(--text);padding:7px 9px;border-radius:4px;cursor:pointer;text-align:left;transition:all .18s;font-family:'IM Fell English',serif}
+.sbtn:hover:not(:disabled){border-color:var(--gold);background:linear-gradient(135deg,#2a2050,#1a1030)}
+.sbtn:disabled{opacity:.3;cursor:not-allowed}
+.sbn{display:block;font-size:12px}.sbc{display:block;font-size:9px;color:#5577cc;font-family:'Cinzel',serif;margin-top:1px}.sbd{display:block;font-size:9px;color:var(--muted);margin-top:1px}
+.arow{display:flex;gap:5px;flex-wrap:wrap}
+.sitem{background:#0d0817;border:1px solid var(--border);border-radius:5px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.sitem:hover{border-color:var(--gold)}
+.sico{font-size:24px;width:32px;text-align:center}
+.sinf{flex:1}.sinf h4{font-family:'Cinzel',serif;font-size:12px;color:var(--gold)}.sinf p{font-size:11px;color:var(--muted)}
+.sprc{font-family:'Cinzel',serif;font-size:12px;color:#ddaa22}
+.schoice{background:#0d0817;border:2px solid var(--border);border-radius:5px;padding:12px;margin-bottom:8px;cursor:pointer;text-align:left;transition:all .18s;width:100%}
+.schoice:hover{border-color:var(--gold);background:#1a1030}
+.schoice h4{font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:3px}
+.schoice p{font-size:11px;color:var(--muted)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1030;border:1px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:12px;padding:9px 22px;border-radius:18px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center;max-width:300px}
+#toast.on{opacity:1}
+.shake{animation:shk .35s ease}
+@keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.star{position:absolute;border-radius:50%;background:#fff;animation:tw var(--d,2s) ease-in-out infinite var(--dl,0s)}
+@keyframes tw{0%,100%{opacity:.15}50%{opacity:.9}}
+@media(max-width:768px){.hgrid{grid-template-columns:1fr 1fr}.sgrid{grid-template-columns:1fr 1fr}#dpad{display:block!important}#gamebtns{display:block!important}}
+.sv-card{background:rgba(5,2,16,.7);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color .2s}
+.sv-card.sv-active{border-color:var(--gold);box-shadow:0 0 14px rgba(200,162,39,.18)}
+.sv-card.sv-empty{opacity:.6;border-style:dashed}
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+
+<div id="hud" class="off">
+  <div class="hname" id="hname">Wizard</div>
+  <div class="bars">
+    <div class="brow"><span class="blbl">HP</span><div class="bbg"><div class="bfill hp" id="bhp"></div></div><span class="bval" id="vhp">100/100</span></div>
+    <div class="brow"><span class="blbl">MP</span><div class="bbg"><div class="bfill mp" id="bmp"></div></div><span class="bval" id="vmp">60/60</span></div>
+    <div class="brow"><span class="blbl">XP</span><div class="bbg"><div class="bfill xp" id="bxp"></div></div><span class="bval" id="vxp">0/100</span></div>
+  </div>
+  <div class="hlv" id="hlv">Lv 1</div>
+  <div class="hgold" id="hgold">0G</div>
+  <div class="hyr" id="hyr">Yr 1</div>
+  <div class="htime" id="htime">☀️ 8:00AM</div>
+  <button id="menuBtn" onclick="G.openMenu()">📖 Journal</button>
+  <button id="padToggleBtn" onclick="G.togglePad()" title="Toggle on-screen controls" style="background:rgba(200,162,39,.12);border:1px solid rgba(200,162,39,.3);color:var(--gold);border-radius:6px;padding:5px 9px;font-size:14px;cursor:pointer;line-height:1">🎮</button>
+  <button id="muteBtn" onclick="G.toggleMusic()" title="Toggle music" style="background:rgba(200,162,39,.12);border:1px solid rgba(200,162,39,.3);color:var(--gold);border-radius:6px;padding:5px 9px;font-size:14px;cursor:pointer;line-height:1">🎵</button>
+</div>
+
+<canvas id="minimap" width="140" height="105" class="off"></canvas>
+
+<div id="zprompt">
+  <h3 id="zpname">Location</h3>
+  <p id="zpdesc">Enter?</p>
+  <button class="zbtn" id="zpyes" onclick="G.enterZone()">Enter</button>
+  <button class="zbtn no" onclick="G.closePrompt()">Back</button>
+</div>
+
+<div id="npcPrompt" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(5,2,16,.97);border:2px solid var(--gold);border-radius:8px;padding:14px 22px;text-align:center;font-family:'Cinzel',serif;display:none;min-width:260px;max-width:340px;box-shadow:0 4px 24px #0008">
+  <div id="npcPIcon" style="font-size:26px;margin-bottom:3px"></div>
+  <div id="npcPName" style="color:var(--gold);font-size:13px;font-weight:700;margin-bottom:4px"></div>
+  <div id="npcPMsg" style="color:var(--muted);font-size:10px;margin-bottom:5px;line-height:1.6"></div>
+  <div id="npcPReward" style="color:#ffaa44;font-size:10px;margin-bottom:10px;font-style:italic"></div>
+  <button class="zbtn" onclick="G.acceptChallenge()">⚔️ Accept Duel</button>
+  <button class="zbtn no" onclick="G.declineChallenge()">← Not now</button>
+</div>
+
+<div id="dpad">
+  <div class="dp-grid">
+    <div class="dp dp-empty"></div>
+    <div class="dp" id="dpU">▲</div>
+    <div class="dp dp-empty"></div>
+    <div class="dp" id="dpL">◀</div>
+    <div class="dp dp-center">✦</div>
+    <div class="dp" id="dpR">▶</div>
+    <div class="dp dp-empty"></div>
+    <div class="dp" id="dpD">▼</div>
+    <div class="dp dp-empty"></div>
+  </div>
+</div>
+
+<div id="gamebtns">
+  <div class="gpad-row">
+    <div class="gpad-btn btn-b" id="btnB">B</div>
+    <div class="gpad-btn btn-a" id="btnA">A</div>
+  </div>
+  <div class="gpad-lbl"><span>BACK</span><span>ACT</span></div>
+</div>
+
+<div class="overlay" id="titleScr">
+  <div class="stars" id="stars"></div>
+  <div style="position:relative;z-index:1;text-align:center">
+    <span class="wand">🪄</span>
+    <div class="tlogo" style="margin-bottom:28px"><h1>Hogwarts Adventure</h1><p>A Wizarding RPG</p></div>
+    <button class="btn" onclick="G.showSlots('new')">✨ New Adventure</button><br>
+    <button class="btn" id="btnContinue" style="display:none" onclick="G.loadGame()">▶ Continue</button><br>
+    <button class="btn" id="btnSlots" style="display:none" onclick="G.showSlots('load')" style="background:rgba(200,162,39,.08)">📁 Load / Manage Saves</button>
+    <p style="margin-top:20px;font-size:10px;color:#4a3a6a;font-family:'Cinzel',serif;letter-spacing:2px">WASD / ARROWS TO WALK</p>
+  </div>
+</div>
+
+<div class="overlay off" id="createScr">
+  <div class="panel">
+    <h2>⚡ Enroll at Hogwarts</h2>
+    <div class="slbl">Your Name</div>
+    <input class="ifield" id="pname" placeholder="Enter your wizarding name..." maxlength="22">
+    <div class="slbl">Your Character</div>
+    <div id="avatarWrap"><canvas id="avatarPreview" width="110" height="90"></canvas></div>
+    <div class="gender-grid">
+      <div class="gender-card" id="gboy" onclick="G.selGender('boy')"><span style="font-size:34px">🧙‍♂️</span><h3>Wizard Boy</h3><p>Harry's path</p></div>
+      <div class="gender-card" id="ggirl" onclick="G.selGender('girl')"><span style="font-size:34px">🧙‍♀️</span><h3>Witch Girl</h3><p>Hermione's path</p></div>
+    </div>
+    <div class="slbl">Choose Your House</div>
+    <div class="hgrid">
+      <div class="hcard" id="hg" onclick="G.selHouse('g')" style="--hc:#cc4444;--hbg:#2a0808"><span style="font-size:28px">🦁</span><h3>Gryffindor</h3><p>+15% Spell Damage<br>+10 Max HP</p></div>
+      <div class="hcard" id="hs" onclick="G.selHouse('s')" style="--hc:#44cc88;--hbg:#08220e"><span style="font-size:28px">🐍</span><h3>Slytherin</h3><p>+20% Crit Chance<br>+15 Max Mana</p></div>
+      <div class="hcard" id="hr" onclick="G.selHouse('r')" style="--hc:#4488cc;--hbg:#081222"><span style="font-size:28px">🦅</span><h3>Ravenclaw</h3><p>Start with 2 extra spells<br>+10% XP Gain</p></div>
+      <div class="hcard" id="hh" onclick="G.selHouse('h')" style="--hc:#ddaa22;--hbg:#221a08"><span style="font-size:28px">🦡</span><h3>Hufflepuff</h3><p>+25% Potion Healing<br>3 Starting Potions</p></div>
+    </div>
+    <div style="text-align:center">
+      <button class="btn" onclick="G.startGame()">🎓 Enter Hogwarts</button>
+      <button class="btn red" onclick="G.showTitle()">← Back</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay off" id="battleScr">
+  <div class="panel" style="position:relative;overflow:hidden">
+    <div id="pStatsBattle" style="background:#05021088;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span id="bpname" style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);white-space:nowrap"></span>
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:160px">
+        <div style="display:flex;align-items:center;gap:4px"><span style="font-size:9px;color:var(--muted);width:18px;text-align:right;font-family:'Cinzel',serif">HP</span><div style="flex:1;height:8px;background:#0d081799;border-radius:8px;overflow:hidden;border:1px solid #ffffff18"><div id="bbhp" style="height:100%;border-radius:8px;background:linear-gradient(90deg,#991111,#ee3333);transition:width .35s"></div></div><span id="bvhp" style="font-size:9px;color:var(--muted);min-width:52px;font-family:'Cinzel',serif"></span></div>
+        <div style="display:flex;align-items:center;gap:4px"><span style="font-size:9px;color:var(--muted);width:18px;text-align:right;font-family:'Cinzel',serif">MP</span><div style="flex:1;height:8px;background:#0d081799;border-radius:8px;overflow:hidden;border:1px solid #ffffff18"><div id="bbmp" style="height:100%;border-radius:8px;background:linear-gradient(90deg,#1133aa,#3377ee);transition:width .35s"></div></div><span id="bvmp" style="font-size:9px;color:var(--muted);min-width:52px;font-family:'Cinzel',serif"></span></div>
+        <div style="display:flex;align-items:center;gap:4px"><span style="font-size:9px;color:var(--muted);width:18px;text-align:right;font-family:'Cinzel',serif">XP</span><div style="flex:1;height:8px;background:#0d081799;border-radius:8px;overflow:hidden;border:1px solid #ffffff18"><div id="bbxp" style="height:100%;border-radius:8px;background:linear-gradient(90deg,#886611,#ccaa22);transition:width .35s"></div></div><span id="bvxp" style="font-size:9px;color:var(--muted);min-width:52px;font-family:'Cinzel',serif"></span></div>
+      </div>
+      <span id="bplv" style="background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:2px 7px;font-family:'Cinzel',serif;font-size:10px;color:var(--gold)"></span>
+    </div>
+    <div class="ezone">
+      <div class="eport" id="eport">👹</div>
+      <div class="ename" id="ename" style="color:#ff8888">Enemy</div>
+      <div class="ehpw"><div class="ehpbg"><div class="ehpf" id="ehpf" style="width:100%"></div></div><div class="ehpt" id="ehpt">100/100</div></div>
+      <div class="sbadges" id="estat"></div>
+    </div>
+    <div class="clog" id="clog"></div>
+    <div class="sgrid" id="sgrid"></div>
+    <div class="arow">
+      <button class="btn sm grn" id="btnItem" onclick="B.openBattleBag()">🎒 Bag</button>
+      <button class="btn sm red" onclick="B.flee()">🏃 Flee</button>
+    </div>
+    <div id="battleBagPanel" style="display:none;position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(5,2,16,.97),rgba(10,5,25,1));border-top:2px solid var(--border);padding:12px 16px;border-radius:0 0 10px 10px;z-index:5">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-family:'Cinzel Decorative',serif;font-size:12px;color:var(--gold);letter-spacing:1px">🎒 BAG</span>
+        <button onclick="B.closeBattleBag()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:0 4px" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">✕</button>
+      </div>
+      <div id="battleBagGrid" style="display:flex;flex-wrap:wrap;gap:7px;max-height:180px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay off" id="spellScr" style="background:#080814;flex-direction:column;padding:0">
+  <div style="position:absolute;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:10px 18px;background:linear-gradient(180deg,rgba(5,2,16,.95),transparent)">
+    <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:14px">⚔️ Dueling Club</div>
+    <div id="spTimer" style="font-family:'Cinzel Decorative',serif;font-size:18px;color:#fff"></div>
+    <div id="spScore" style="font-family:'Cinzel',serif;font-size:13px;color:#ffdd44"></div>
+  </div>
+  <canvas id="spCanvas" style="display:block;touch-action:none"></canvas>
+  <div id="spOverlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,2,16,.88);z-index:20">
+    <div id="spOTitle" style="font-family:'Cinzel Decorative',serif;font-size:26px;color:var(--gold);margin-bottom:10px"></div>
+    <div id="spOMsg" style="font-family:'Cinzel',serif;font-size:12px;color:var(--muted);margin-bottom:20px;text-align:center;max-width:340px;line-height:2"></div>
+    <button class="btn" id="spStartBtn" onclick="SP.start()">⚡ Begin Practice!</button>
+    <button class="btn red" style="margin-top:6px" onclick="SP.exit()">← Leave Club</button>
+  </div>
+</div>
+
+<div class="overlay off" id="dormScr">
+  <div class="panel" style="max-width:520px">
+    <div id="dormBanner" style="text-align:center;padding:18px;border-radius:8px;margin-bottom:14px;border:2px solid #ffffff22">
+      <div id="dormMascot" style="font-size:52px;margin-bottom:4px"></div>
+      <div id="dormTitle" style="font-family:'Cinzel Decorative',serif;font-size:16px;letter-spacing:2px"></div>
+      <div id="dormQuote" style="font-size:11px;font-style:italic;margin-top:8px;color:var(--muted);line-height:1.6;max-width:340px;margin-left:auto;margin-right:auto"></div>
+    </div>
+    <div id="dormStats" style="background:#05021088;border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:10px;font-family:'Cinzel',serif;font-size:11px;line-height:2;color:var(--text)"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <button class="btn grn" onclick="G.dormRest()">🛏️ Rest &amp; Recover</button>
+      <button class="btn" id="btnStudy" onclick="G.dormStudy()">📚 Study (+XP)</button>
+    </div>
+    <div id="dormLog" style="font-family:'Cinzel',serif;font-size:10px;color:var(--muted);line-height:1.8;margin-bottom:10px"></div>
+    <div style="text-align:center"><button class="btn red" onclick="G.closeDorm()">← Leave Dormitory</button></div>
+  </div>
+</div>
+
+<!-- ── WIZARD JOURNAL (pause menu) ───────────────── -->
+<div class="overlay off" id="pauseScr" style="backdrop-filter:blur(3px)">
+  <div style="background:linear-gradient(150deg,#08041a,#130930);border:1.5px solid var(--border);border-radius:12px;width:min(94vw,460px);box-shadow:0 8px 40px #000c,0 0 0 1px #ffffff08;font-family:'Cinzel',serif;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#0e0628,#1c0a44)">
+      <span style="font-size:17px">📖</span>
+      <span style="font-family:'Cinzel Decorative',serif;font-size:13px;color:var(--gold);letter-spacing:1.5px">WIZARD JOURNAL</span>
+      <button onclick="G.closeMenu()" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">✕</button>
+    </div>
+    <div style="display:flex;gap:0;padding:16px 18px">
+      <div style="flex:0 0 108px;text-align:center">
+        <div id="menuPortraitFrame" style="display:inline-block;border-radius:10px;padding:3px;margin-bottom:7px">
+          <canvas id="menuPortrait" width="96" height="122" style="display:block;border-radius:7px;background:#050210"></canvas>
+        </div>
+        <div id="menuHouseBadge" style="font-size:9px;letter-spacing:.8px;padding:3px 10px;border-radius:10px;display:inline-block;font-weight:700"></div>
+        <div id="menuHouseMascot" style="font-size:38px;margin-top:5px;line-height:1.1;display:block"></div>
+      </div>
+      <div style="flex:1;padding-left:16px">
+        <div id="menuName" style="font-family:'Cinzel Decorative',serif;font-size:13px;color:var(--gold);margin-bottom:10px;word-break:break-word"></div>
+        <div id="menuStats" style="font-size:10px;color:var(--text);line-height:2.1"></div>
+        <div style="margin-top:10px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:3px;letter-spacing:.5px">HP</div>
+          <div style="background:#0d0826;border-radius:4px;height:7px;overflow:hidden;border:1px solid #ffffff14;margin-bottom:7px"><div id="mHpBar" style="height:100%;background:linear-gradient(90deg,#881111,#dd3333);transition:width .3s"></div></div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:3px;letter-spacing:.5px">MP</div>
+          <div style="background:#0d0826;border-radius:4px;height:7px;overflow:hidden;border:1px solid #ffffff14"><div id="mMpBar" style="height:100%;background:linear-gradient(90deg,#1111aa,#3355dd);transition:width .3s"></div></div>
+        </div>
+      </div>
+    </div>
+    <div id="menuPerks" style="padding:7px 18px 9px;font-size:10px;color:var(--muted);border-top:1px solid #ffffff0a;min-height:24px;line-height:1.9"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px;border-top:1px solid var(--border);background:rgba(5,2,16,.6)">
+      <button class="btn" style="font-size:11px;padding:10px 4px" onclick="G.openLoadout()">⚔️ Skills</button>
+      <button class="btn" style="font-size:11px;padding:10px 4px;background:#1a2a44" onclick="G.openBag()">🎒 Bag</button>
+      <button class="btn grn" style="font-size:11px;padding:10px 4px" onclick="G.saveFromMenu()">💾 Save</button>
+      <button class="btn" style="font-size:11px;padding:10px 4px;background:#1a0a44" onclick="G.closeMenu()">▶ Resume</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SPELL LOADOUT ─────────────────────────────── -->
+<div class="overlay off" id="loadoutScr" style="backdrop-filter:blur(3px)">
+  <div style="background:linear-gradient(150deg,#08041a,#130930);border:1.5px solid var(--border);border-radius:12px;width:min(96vw,620px);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 8px 40px #000c;font-family:'Cinzel',serif;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#0e0628,#1c0a44);flex-shrink:0">
+      <span style="font-size:17px">⚔️</span>
+      <span style="font-family:'Cinzel Decorative',serif;font-size:13px;color:var(--gold);letter-spacing:1.5px">SKILLS</span>
+      <span id="eqCount" style="font-size:10px;color:var(--muted);margin-left:4px"></span>
+    </div>
+    <div style="padding:11px 16px;border-bottom:1px solid #ffffff0d;flex-shrink:0">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.8px;margin-bottom:7px">EQUIPPED FOR BATTLE</div>
+      <div id="equippedBar" style="display:flex;flex-wrap:wrap;gap:5px;min-height:26px"></div>
+    </div>
+    <div style="overflow-y:auto;padding:14px 16px;flex:1">
+      <div id="swapHint" style="display:none;margin-bottom:10px;padding:8px 12px;border-radius:7px;background:rgba(255,170,30,.13);border:1px solid #ffaa33;font-size:10px;color:#ffcc77;line-height:1.5;text-align:center">🔁 <strong>Swap mode:</strong> tap an equipped <strong>✓ ON</strong> spell to replace it<br><span style="font-size:9px;opacity:.7">Tap the glowing spell again to cancel</span></div>
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.8px;margin-bottom:10px">ALL KNOWN SPELLS — tap to equip / unequip</div>
+      <div id="spellLoadoutGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px"></div>
+      <div id="lockedDivider" style="display:none;font-size:9px;color:var(--muted);letter-spacing:.8px;margin:16px 0 10px;padding-top:12px;border-top:1px solid #ffffff0d">🔒 LOCKED — LEVEL UP TO UNLOCK</div>
+      <div id="spellLockedGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px"></div>
+    </div>
+    <div style="padding:10px 16px;border-top:1px solid var(--border);background:rgba(5,2,16,.6);text-align:center;flex-shrink:0">
+      <button class="btn" onclick="G.closeLoadout()">← Back to Journal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── BAG SCREEN ──────────────────────────────── -->
+<div class="overlay off" id="bagScr" style="backdrop-filter:blur(3px)">
+  <div style="background:linear-gradient(150deg,#08041a,#130930);border:1.5px solid var(--border);border-radius:12px;width:min(96vw,620px);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 8px 40px #000c;font-family:'Cinzel',serif;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#0e0628,#1c0a44);flex-shrink:0">
+      <span style="font-size:17px">🎒</span>
+      <span style="font-family:'Cinzel Decorative',serif;font-size:13px;color:var(--gold);letter-spacing:1.5px">WIZARD'S BAG</span>
+    </div>
+    <div style="overflow-y:auto;padding:16px;flex:1">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:.8px;margin-bottom:12px">YOUR ITEMS — tap Use to consume outside of battle</div>
+      <div id="bagGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px"></div>
+    </div>
+    <div style="padding:10px 16px;border-top:1px solid var(--border);background:rgba(5,2,16,.6);text-align:center;flex-shrink:0">
+      <button class="btn" onclick="G.closeBag()">← Back to Journal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SAVE SLOTS SCREEN ───────────────────────── -->
+<div class="overlay off" id="slotScr">
+  <div style="background:linear-gradient(150deg,#08041a,#130930);border:1.5px solid var(--border);border-radius:12px;width:min(96vw,560px);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px #000c;font-family:'Cinzel',serif;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#0e0628,#1c0a44);flex-shrink:0">
+      <span style="font-size:17px">📁</span>
+      <span style="font-family:'Cinzel Decorative',serif;font-size:13px;color:var(--gold);letter-spacing:1.5px">SAVE SLOTS</span>
+      <span id="slotModeLabel" style="font-size:10px;color:var(--muted);margin-left:6px"></span>
+    </div>
+    <div style="overflow-y:auto;padding:14px 16px;flex:1">
+      <div id="slotListEl" style="display:flex;flex-direction:column;gap:9px"></div>
+    </div>
+    <div style="padding:10px 16px;border-top:1px solid var(--border);background:rgba(5,2,16,.6);text-align:center;flex-shrink:0">
+      <button class="btn" onclick="G.closeSlots()">← Back</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay off" id="quidditchScr" style="background:#0a1a3a;flex-direction:column;padding:0">
+  <div style="position:absolute;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:10px 18px;background:linear-gradient(180deg,rgba(5,10,30,.95),transparent)">
+    <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:14px">🧹 Quidditch Match</div>
+    <div id="qTimer" style="font-family:'Cinzel Decorative',serif;font-size:18px;color:#fff"></div>
+    <div id="qScore" style="font-family:'Cinzel',serif;font-size:13px;color:#ffdd44"></div>
+  </div>
+  <canvas id="qCanvas" style="display:block;touch-action:none"></canvas>
+  <div id="qOverlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,2,16,.88);z-index:20">
+    <div id="qOTitle" style="font-family:'Cinzel Decorative',serif;font-size:28px;color:var(--gold);margin-bottom:10px"></div>
+    <div id="qOMsg" style="font-family:'Cinzel',serif;font-size:13px;color:var(--muted);margin-bottom:22px;text-align:center;max-width:340px;line-height:1.8"></div>
+    <button class="btn" id="qStartBtn" onclick="QG.start()">🏁 Kick Off!</button>
+    <button class="btn red" style="margin-top:6px" onclick="QG.exit()">← Leave Pitch</button>
+  </div>
+</div>
+
+<div class="overlay off" id="shopScr">
+  <div class="panel">
+    <h2>🏪 Weasleys' Wizard Wheezes</h2>
+    <div id="shopItems"></div>
+    <div style="text-align:center;margin-top:12px">
+      <div style="color:#ddaa22;font-family:'Cinzel',serif;font-size:13px;margin-bottom:8px" id="shopGold"></div>
+      <button class="btn red" onclick="G.closeShop()">← Leave</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay off" id="lvlScr">
+  <div class="panel" style="text-align:center;max-width:440px">
+    <h2 style="font-family:'Cinzel Decorative',serif;font-size:22px">⚡ Level Up!</h2>
+    <p id="lvlMsg" style="color:var(--muted);font-size:13px;margin-bottom:16px"></p>
+    <div id="lvlChoices"></div>
+    <p style="font-size:10px;color:var(--muted);margin-top:12px;opacity:.6">Tap a spell above to learn it and continue</p>
+  </div>
+</div>
+
+<div class="overlay off" id="endScr">
+  <div style="text-align:center;max-width:460px;position:relative;z-index:1">
+    <h1 id="endTitle" style="font-family:'Cinzel Decorative',serif;font-size:36px;margin-bottom:14px"></h1>
+    <p id="endMsg" style="font-size:15px;color:var(--muted);margin-bottom:22px;line-height:1.8"></p>
+    <button class="btn" onclick="G.showTitle()">🏠 Return to Start</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── TILE TYPES ──────────────────────────────────
+const T={G:0,DG:1,P:2,W:3,FT:4,DT:5,WA:6,CW:7,CF:8,DO:9,SH:10,QP:11,FL:12,RK:13,GR:14,PO:15,FE:16,BR:17};
+const WALK=new Set([T.G,T.DG,T.P,T.CF,T.DO,T.QP,T.FL,T.GR,T.PO,T.BR]);
+const MW=100,MH=72,TS=32;
+
+function hsh(x,y,s){s=s||0;let n=(x*1619+y*31337+s*6271)|0;n=((n>>14)^n)*0x45d9f3b|0;return((n>>14)^n)&255;}
+
+// ── MAP GENERATION ───────────────────────────────
+function getTile(tx,ty){
+  if(tx<1||ty<1||tx>MW-2||ty>MH-2)return T.W;
+
+  // Hogwarts Castle
+  if(tx>=27&&tx<=45&&ty>=3&&ty<=19){
+    if(ty===19&&(tx===35||tx===36||tx===37))return T.DO;
+    if(ty===9&&(tx===35||tx===36))return T.DO;
+    if(ty===3||ty===19||tx===27||tx===45)return T.CW;
+    if((tx<=31||tx>=41)&&(ty<=7||ty>=15))return T.CW;
+    if(ty===9&&tx>=32&&tx<=40)return T.CW;
+    return T.CF;
+  }
+  // North wing
+  if(tx>=27&&tx<=34&&ty>=1&&ty<=3)return T.CW;
+  // Astronomy tower
+  if(tx>=43&&tx<=48&&ty>=1&&ty<=5){
+    if(ty===1||tx===43||tx===48)return T.CW;
+    if(ty===5&&(tx===45||tx===46))return T.DO;
+    return T.CF;
+  }
+  // East wing
+  if(tx>=45&&tx<=50&&ty>=8&&ty<=14){
+    if(ty===14&&tx===47)return T.DO;
+    if(tx===45||tx===50||ty===8||ty===14)return T.CW;
+    return T.CF;
+  }
+  // Room of Requirement (west of courtyard, south of forest)
+  if(tx>=19&&tx<=27&&ty>=37&&ty<=44){
+    if(ty===37&&(tx===22||tx===23))return T.DO;
+    if(ty===37||ty===44||tx===19||tx===27)return T.CW;
+    return T.CF;
+  }
+  if(tx>=19&&tx<=29&&ty>=35&&ty<=37)return T.P;
+  // Courtyard
+  if(tx>=29&&tx<=43&&ty>=19&&ty<=27)return T.P;
+
+  // Forbidden Forest
+  if(tx<=21&&ty<=33){
+    if(tx>=14&&tx<=20&&ty>=26&&ty<=32){
+      if(ty===32&&(tx===16||tx===17))return T.DO;
+      if(ty===26||ty===32||tx===14||tx===20)return T.W;
+      return T.CF;
+    }
+    if(tx>=18&&tx<=22&&ty>=19&&ty<=33)return T.P;
+    return hsh(tx,ty)<58?T.DT:T.DG;
+  }
+
+  // Black Lake
+  {const dx=tx-11,dy=ty-43;if(dx*dx/56+dy*dy/64<1)return T.WA;}
+  if(tx>=12&&tx<=22&&ty>=34&&ty<=38)return T.P;
+  if(tx>=19&&tx<=22&&ty>=37&&ty<=40)return T.BR;
+
+  // Quidditch pitch (moved east slightly for new map)
+  {const dx=tx-58,dy=ty-27;if(dx*dx/64+dy*dy/64<1){if(dx*dx/56+dy*dy/56<1)return T.QP;return T.G;}}
+  if(tx>=45&&tx<=51&&ty>=23&&ty<=25)return T.P;
+  if(tx===51&&ty>=23&&ty<=25)return T.DO;
+
+  // Whomping Willow
+  if(tx>=47&&tx<=52&&ty>=33&&ty<=38)return hsh(tx,ty,4)<60?T.DT:T.G;
+
+  // Hogsmeade
+  if(tx>=26&&tx<=52&&ty>=41&&ty<=52){
+    if((ty>=44&&ty<=46)||(tx>=36&&tx<=38))return T.P;
+    const bs=[{x1:27,x2:33,y1:42,y2:48},{x1:37,x2:43,y1:41,y2:47},{x1:45,x2:51,y1:42,y2:48}];
+    for(const b of bs){
+      if(tx>=b.x1&&tx<=b.x2&&ty>=b.y1&&ty<=b.y2){
+        const m=Math.floor((b.x1+b.x2)/2);
+        if(ty===b.y2&&(tx===m||tx===m+1))return T.DO;
+        if(ty===b.y1||ty===b.y2||tx===b.x1||tx===b.x2)return T.W;
+        return T.CF;
+      }
+    }
+    return T.P;
+  }
+  if(tx>=35&&tx<=37&&ty>=27&&ty<=41)return T.P;
+  if(tx===36&&ty===41)return T.DO;
+
+  // Honeydukes (south of Hogsmeade)
+  if(tx>=30&&tx<=40&&ty>=54&&ty<=62){
+    if(ty===54&&(tx===34||tx===35))return T.DO;
+    if(ty===54||ty===62||tx===30||tx===40)return T.W;
+    return T.CF;
+  }
+  if(tx>=30&&tx<=40&&ty>=52&&ty<=54)return T.P;
+
+  // Dueling Club (south of Shrieking Shack)
+  if(tx>=55&&tx<=65&&ty>=56&&ty<=64){
+    if(ty===56&&(tx===59||tx===60))return T.DO;
+    if(ty===56||ty===64||tx===55||tx===65)return T.W;
+    return T.CF;
+  }
+  if(tx>=55&&tx<=65&&ty>=51&&ty<=56)return T.P;
+
+  // Shrieking Shack
+  if(tx>=55&&tx<=63&&ty>=43&&ty<=51){
+    if(ty===43||ty===51||tx===55||tx===63)return T.W;
+    if(ty===51&&(tx===58||tx===59))return T.DO;
+    return T.CF;
+  }
+  if(tx>=51&&tx<=55&&ty>=46&&ty<=48)return T.P;
+
+  // Graveyard
+  if(tx>=55&&tx<=68&&ty>=34&&ty<=43){
+    if(ty===34||ty===43||tx===55||tx===68)return T.FE;
+    if(hsh(tx,ty,8)<12)return T.RK;
+    return T.GR;
+  }
+  if(tx>=58&&tx<=61&&ty>=43&&ty<=46)return T.P;
+
+  // Ministry portal
+  if(tx>=61&&tx<=67&&ty>=46&&ty<=52){
+    if(tx===64&&ty===49)return T.PO;
+    return hsh(tx,ty,6)<15?T.RK:T.GR;
+  }
+  if(tx>=55&&tx<=61&&ty>=48&&ty<=50)return T.P;
+
+  // ── EXPANDED AREAS ──────────────────────────────
+
+  // North road (east of east wing, leads to Azkaban bridge)
+  if(tx>=51&&tx<=77&&ty>=8&&ty<=10)return T.P;
+
+  // Dragon Enclosure (upper right, reachable from Quidditch area)
+  if(tx>=70&&tx<=83&&ty>=13&&ty<=27){
+    if(tx===70&&ty===24)return T.DO;
+    if(ty===13||ty===27||tx===70||tx===83)return T.FE;
+    return hsh(tx,ty,9)<35?T.DT:T.G;
+  }
+  // East road from Quidditch to Dragon Enclosure
+  if(tx>=63&&tx<=70&&ty>=23&&ty<=26)return T.P;
+
+  // Azkaban (surrounded by dark water, upper far right)
+  if(tx>=77&&tx<=98&&ty>=3&&ty<=20){
+    // Fortress walls and interior
+    if(tx>=81&&tx<=96&&ty>=4&&ty<=18){
+      if(tx===81&&ty===9)return T.DO;
+      if(ty===4||ty===18||tx===81||tx===96)return T.CW;
+      if((tx<=84||tx>=93)&&(ty<=7||ty>=15))return T.CW;
+      return hsh(tx,ty,11)<12?T.CW:T.CF;
+    }
+    // Bridge over water (at ty 8-10 continuing from north road)
+    if(tx>=77&&tx<=81&&ty>=8&&ty<=10)return T.BR;
+    return T.WA;
+  }
+
+  // East road from Hogsmeade to Diagon Alley
+  if(tx>=52&&tx<=70&&ty>=44&&ty<=46)return T.P;
+  // South road connecting areas
+  if(tx>=68&&tx<=70&&ty>=40&&ty<=46)return T.P;
+
+  // Diagon Alley (right side, middle)
+  if(tx>=70&&tx<=97&&ty>=38&&ty<=60){
+    if((ty>=41&&ty<=43)||(ty>=50&&ty<=52)||(tx>=79&&tx<=81)||(tx>=88&&tx<=90))return T.P;
+    const bd=[
+      {x1:71,x2:78,y1:39,y2:46},{x1:82,x2:87,y1:39,y2:46},{x1:91,x2:96,y1:39,y2:46},
+      {x1:71,x2:78,y1:48,y2:55},{x1:82,x2:87,y1:48,y2:55},{x1:91,x2:96,y1:48,y2:55}
+    ];
+    for(const b of bd){
+      if(tx>=b.x1&&tx<=b.x2&&ty>=b.y1&&ty<=b.y2){
+        const m=Math.floor((b.x1+b.x2)/2);
+        if(ty===b.y2&&(tx===m||tx===m+1))return T.DO;
+        if(ty===b.y1||ty===b.y2||tx===b.x1||tx===b.x2)return T.W;
+        return T.CF;
+      }
+    }
+    return T.P;
+  }
+
+  const rv=hsh(tx,ty,1);
+  if(rv<4)return T.FL;
+  if(rv<7)return T.SH;
+  if(rv<9)return T.RK;
+  return T.G;
+}
+
+let MAP=null;
+function buildMap(){
+  if(MAP)return;
+  MAP=[];
+  for(let y=0;y<MH;y++){MAP[y]=[];for(let x=0;x<MW;x++)MAP[y][x]=getTile(x,y);}
+}
+
+// ── TILE RENDERER ───────────────────────────────
+let mapOff=null;
+function prerenderMap(){
+  mapOff=document.createElement('canvas');
+  mapOff.width=MW*TS;mapOff.height=MH*TS;
+  const cx=mapOff.getContext('2d');
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)renderTile(cx,x,y,MAP[y][x]);
+}
+function renderTile(cx,tx,ty,t){
+  const px=tx*TS,py=ty*TS,r=hsh(tx,ty)%8;
+  switch(t){
+    case T.G:cx.fillStyle=r<3?'#4a7c2f':r<5?'#4f8534':'#527237';cx.fillRect(px,py,TS,TS);if((tx*ty)%6===0){cx.fillStyle='#3a6020';for(let i=0;i<4;i++)cx.fillRect(px+5+i*7,py+8+(i*13)%12,2,5+(i*3)%5);}break;
+    case T.DG:cx.fillStyle=r<3?'#192e08':'#1e3a0c';cx.fillRect(px,py,TS,TS);break;
+    case T.FL:cx.fillStyle='#4a7c2f';cx.fillRect(px,py,TS,TS);cx.fillStyle=r%2?'#cc4444':'#ddaa22';cx.beginPath();cx.arc(px+14+r,py+14+r%3,3,0,6.28);cx.fill();break;
+    case T.SH:cx.fillStyle='#2d5218';cx.fillRect(px,py,TS,TS);cx.fillStyle='#1a3d0a';cx.beginPath();cx.ellipse(px+TS/2,py+TS/2,10,8,0,0,6.28);cx.fill();break;
+    case T.P:cx.fillStyle='#7a6248';cx.fillRect(px,py,TS,TS);cx.fillStyle=(tx+ty)%2===0?'#8b7355':'#7a6248';cx.fillRect(px+2,py+2,TS/2-3,TS/2-3);cx.fillRect(px+TS/2+1,py+TS/2+1,TS/2-3,TS/2-3);cx.strokeStyle='#6a5238';cx.lineWidth=.5;cx.strokeRect(px+.5,py+.5,TS-1,TS-1);break;
+    case T.BR:cx.fillStyle='#8b7355';cx.fillRect(px,py,TS,TS);cx.fillStyle='#6a5238';for(let i=0;i<4;i++)cx.fillRect(px+1,py+i*8,TS-2,2);break;
+    case T.W:cx.fillStyle='#334455';cx.fillRect(px,py,TS,TS);cx.fillStyle='#445566';for(let b=0;b<4;b++){const o=b%2?TS/2:0;for(let i=0;i<3;i++)cx.fillRect(px+(o+i*TS/2)%TS,py+b*8,TS/2-1,7);}break;
+    case T.CW:cx.fillStyle='#667788';cx.fillRect(px,py,TS,TS);cx.fillStyle='#778899';for(let b=0;b<4;b++){const o=b%2?TS/2:0;for(let i=0;i<3;i++)cx.fillRect(px+(o+i*TS/2)%TS,py+b*8,TS/2-1,7);}cx.fillStyle='#445566';cx.fillRect(px+4,py+10,5,7);cx.fillRect(px+12,py+10,5,7);break;
+    case T.CF:cx.fillStyle=r<3?'#99aabb':'#8899aa';cx.fillRect(px,py,TS,TS);cx.strokeStyle='#aabbcc22';cx.lineWidth=.5;cx.strokeRect(px+.5,py+.5,TS-1,TS-1);break;
+    case T.DO:cx.fillStyle='#5a2810';cx.fillRect(px,py,TS,TS);cx.fillStyle='#7a3818';cx.fillRect(px+4,py+2,TS-8,TS-4);cx.fillStyle='#c9a22766';cx.beginPath();cx.arc(px+TS/2,py+TS/2,3,0,6.28);cx.fill();break;
+    case T.DT:cx.fillStyle='#0f1e06';cx.fillRect(px,py,TS,TS);cx.fillStyle='#1a3308';cx.fillRect(px+TS/2-2,py+TS-12,4,12);cx.fillStyle=r<4?'#1f4010':'#243d12';cx.beginPath();cx.arc(px+TS/2,py+8,11,0,6.28);cx.fill();cx.fillStyle='#162e08';cx.beginPath();cx.arc(px+TS/2,py+11,9,0,6.28);cx.fill();break;
+    case T.FT:cx.fillStyle='#1a3d0a';cx.fillRect(px,py,TS,TS);cx.fillStyle='#2a5a1a';cx.fillRect(px+TS/2-2,py+TS-10,4,10);cx.fillStyle=r<4?'#2d6622':'#347a28';cx.beginPath();cx.arc(px+TS/2,py+10,10,0,6.28);cx.fill();break;
+    case T.WA:cx.fillStyle='#1a4a8a';cx.fillRect(px,py,TS,TS);cx.fillStyle='#1e54a0';cx.fillRect(px+2,py+4,TS-4,4);cx.fillRect(px+4,py+14,TS-8,3);cx.fillRect(px+2,py+22,TS-4,3);break;
+    case T.QP:cx.fillStyle=r<4?'#5a9a3a':'#4f8834';cx.fillRect(px,py,TS,TS);if((tx+ty)%3===0){cx.strokeStyle='#ffffff22';cx.lineWidth=.8;cx.beginPath();cx.moveTo(px,py+TS/2);cx.lineTo(px+TS,py+TS/2);cx.stroke();}break;
+    case T.GR:cx.fillStyle=r<4?'#1e1e2a':'#232330';cx.fillRect(px,py,TS,TS);if((tx*ty)%5===0){cx.fillStyle='#333344';cx.fillRect(px+10,py+4,8,18);}break;
+    case T.PO:cx.fillStyle='#1a0033';cx.fillRect(px,py,TS,TS);cx.fillStyle='#4400aa';cx.beginPath();cx.ellipse(px+TS/2,py+TS/2,10,10,0,0,6.28);cx.fill();cx.fillStyle='#8822ff';cx.beginPath();cx.ellipse(px+TS/2,py+TS/2,6,6,0,0,6.28);cx.fill();cx.fillStyle='#cc88ff';cx.beginPath();cx.arc(px+TS/2,py+TS/2,3,0,6.28);cx.fill();break;
+    case T.FE:cx.fillStyle='#6b4a2a';cx.fillRect(px,py,TS,TS);cx.fillStyle='#8b6644';cx.fillRect(px+4,py+4,TS-8,TS-8);break;
+    case T.RK:cx.fillStyle='#667788';cx.fillRect(px,py,TS,TS);cx.fillStyle='#7788aa';cx.beginPath();cx.ellipse(px+TS/2,py+TS/2-2,10,8,.3,0,6.28);cx.fill();break;
+    default:cx.fillStyle='#4a7c2f';cx.fillRect(px,py,TS,TS);
+  }
+}
+
+// ── WIZARD SPRITE ────────────────────────────────
+function drawWizard(ctx,cx,cy,dir,wf,houseColor,casting,gender){
+  ctx.save();ctx.translate(Math.round(cx),Math.round(cy));
+  // Shadow
+  ctx.globalAlpha=.35;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(0,2,9,3,0,0,6.28);ctx.fill();ctx.globalAlpha=1;
+  const ls=Math.sin(wf*3.14)*4;
+  const wx=dir==='left'?-10:10,wd=dir==='left'?-1:1;
+  const wa=casting?Math.sin(Date.now()*.01)*.5:.2;
+
+  if(gender==='girl'){
+    // ── GIRL: flowing hair, dress-style robe ──
+    // Shoes + ankles
+    if(dir!=='up'){
+      ctx.fillStyle='#1a1a2e';ctx.fillRect(-5+ls*.3,-3,3,9);ctx.fillRect(2-ls*.3,-3,3,9);
+      ctx.fillStyle='#111';ctx.fillRect(-6+ls*.3,6,5,4);ctx.fillRect(1-ls*.3,6,5,4);
+    }
+    // Robe (dress, wider at base)
+    ctx.fillStyle=houseColor;
+    ctx.beginPath();ctx.moveTo(-7,-28);ctx.lineTo(7,-28);ctx.lineTo(13,4);ctx.lineTo(-13,4);ctx.closePath();ctx.fill();
+    // Robe collar trim
+    ctx.strokeStyle='#c9a227';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(-6,-28);ctx.lineTo(6,-28);ctx.lineTo(6,-21);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-6,-28);ctx.lineTo(-6,-21);ctx.stroke();
+    // Waist ribbon
+    ctx.strokeStyle='#c9a22788';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(-10,-12);ctx.lineTo(10,-12);ctx.stroke();
+    // Long flowing side hair (behind head, drawn first)
+    ctx.fillStyle='#7700aa';
+    ctx.beginPath();ctx.moveTo(-7,-40);ctx.quadraticCurveTo(-13,-28,-11,-14);ctx.lineTo(-9,-14);ctx.quadraticCurveTo(-11,-26,-6,-40);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(7,-40);ctx.quadraticCurveTo(13,-28,11,-14);ctx.lineTo(9,-14);ctx.quadraticCurveTo(11,-26,6,-40);ctx.closePath();ctx.fill();
+    // Head
+    ctx.fillStyle='#f4c5a0';ctx.beginPath();ctx.arc(0,-34,7,0,6.28);ctx.fill();
+    // Hair top (purple)
+    ctx.fillStyle='#9900cc';ctx.beginPath();ctx.arc(0,-37,6,Math.PI,.1);ctx.fill();
+    // Braid on right side
+    ctx.fillStyle='#bb44ee';
+    ctx.beginPath();ctx.moveTo(7,-34);ctx.quadraticCurveTo(12,-24,10,-10);ctx.lineTo(8,-10);ctx.quadraticCurveTo(10,-23,6,-34);ctx.closePath();ctx.fill();
+    // Braid detail dashes
+    ctx.strokeStyle='#7700aa';ctx.lineWidth=1;
+    for(let i=0;i<4;i++){const by=-30+i*5;ctx.beginPath();ctx.moveTo(8,by);ctx.lineTo(10,by+2);ctx.stroke();}
+    // Hat brim
+    ctx.fillStyle='#111122';ctx.fillRect(-9,-41,18,4);
+    // Hat cone (slightly tilted for style)
+    ctx.beginPath();ctx.moveTo(-6,-41);ctx.lineTo(6,-41);ctx.lineTo(4,-57);ctx.lineTo(-2,-57);ctx.closePath();ctx.fill();
+    // Hat band
+    ctx.fillStyle='#c9a227';ctx.fillRect(-6,-44,12,3);
+    // Small star on hat
+    ctx.fillStyle='#fff8cc';ctx.font='7px serif';ctx.textAlign='center';ctx.fillText('★',1,-50);
+    // Eyes (brown, no glasses)
+    if(dir!=='up'){
+      ctx.fillStyle='#3a1800';ctx.fillRect(-3,-36,2,2);ctx.fillRect(1,-36,2,2);
+      // Eyelashes
+      ctx.strokeStyle='#1a0800';ctx.lineWidth=.8;
+      ctx.beginPath();ctx.moveTo(-4,-37);ctx.lineTo(-2,-38);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(2,-37);ctx.lineTo(4,-38);ctx.stroke();
+      // Rosy cheeks
+      ctx.globalAlpha=.2;ctx.fillStyle='#ff6688';
+      ctx.beginPath();ctx.arc(-4,-33,2.5,0,6.28);ctx.fill();
+      ctx.beginPath();ctx.arc(4,-33,2.5,0,6.28);ctx.fill();
+      ctx.globalAlpha=1;
+    }
+  } else {
+    // ── BOY: messy hair, straight robes, glasses, lightning scar ──
+    ctx.fillStyle='#1a1a2e';
+    if(dir!=='up'){ctx.fillRect(-6+ls*.4,-8,5,13);ctx.fillRect(1-ls*.4,-8,5,13);}
+    // Robe (straight)
+    ctx.fillStyle=houseColor;
+    ctx.beginPath();ctx.moveTo(-8,-28);ctx.lineTo(8,-28);ctx.lineTo(10,2);ctx.lineTo(-10,2);ctx.closePath();ctx.fill();
+    // Collar trim
+    ctx.strokeStyle='#c9a227';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(-8,-28);ctx.lineTo(8,-28);ctx.lineTo(8,-22);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-8,-28);ctx.lineTo(-8,-22);ctx.stroke();
+    // Head
+    ctx.fillStyle='#f4c5a0';ctx.beginPath();ctx.arc(0,-34,7,0,6.28);ctx.fill();
+    // Messy purple hair base
+    ctx.fillStyle='#7700aa';ctx.beginPath();ctx.arc(0,-38,5.5,Math.PI,0);ctx.fill();
+    // Messy tufts
+    ctx.fillStyle='#9900cc';
+    ctx.beginPath();ctx.arc(-3,-42,3,0,6.28);ctx.fill();
+    ctx.beginPath();ctx.arc(3,-43,2.5,0,6.28);ctx.fill();
+    ctx.beginPath();ctx.arc(-6,-40,2.2,0,6.28);ctx.fill();
+    ctx.beginPath();ctx.arc(6,-40,2.5,0,6.28);ctx.fill();
+    ctx.beginPath();ctx.arc(0,-44,2,0,6.28);ctx.fill();
+    // Hat brim
+    ctx.fillStyle='#111122';ctx.fillRect(-9,-41,18,4);
+    // Hat cone
+    ctx.beginPath();ctx.moveTo(-6,-41);ctx.lineTo(6,-41);ctx.lineTo(3,-58);ctx.lineTo(-3,-58);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#c9a227';ctx.fillRect(-6,-44,12,3);
+    // Eyes + round glasses
+    if(dir!=='up'){
+      ctx.fillStyle='#222';ctx.fillRect(-3,-36,2,2);ctx.fillRect(1,-36,2,2);
+      ctx.strokeStyle='#444';ctx.lineWidth=.9;
+      ctx.beginPath();ctx.arc(-2,-35.5,2.2,0,6.28);ctx.stroke();
+      ctx.beginPath();ctx.arc(2,-35.5,2.2,0,6.28);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-.2,-35.5);ctx.lineTo(.2,-35.5);ctx.stroke();
+      // Lightning bolt scar
+      ctx.strokeStyle='#e03030';ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo(-1,-30);ctx.lineTo(.5,-28);ctx.lineTo(-1,-26);ctx.stroke();
+    }
+  }
+
+  // Wand (same for both)
+  ctx.save();ctx.translate(wx,-22);ctx.rotate(wa*wd);
+  ctx.fillStyle='#5a3010';ctx.fillRect(-1.5,-16,3,16);
+  ctx.fillStyle='#8b4513';ctx.fillRect(-1.5,-16,3,6);
+  if(casting){
+    ctx.fillStyle='#c9a227';ctx.shadowColor='#c9a227';ctx.shadowBlur=14;
+    ctx.beginPath();ctx.arc(0,-16,5,0,6.28);ctx.fill();ctx.shadowBlur=0;
+  }
+  ctx.restore();ctx.restore();
+}
+
+// ── ZONES ────────────────────────────────────────
+const ZONES=[
+  {id:'grounds',   name:'Hogwarts Castle',     icon:'🏰',desc:'Rest and recover inside.',    tx:35,ty:19,w:3,h:2, safe:true,  color:'#c9a227'},
+  {id:'forest',    name:'Forbidden Forest',    icon:'🌲',desc:'Dark creatures lurk within.', tx:5, ty:8, w:10,h:15,danger:2,  color:'#44cc66'},
+  {id:'chamber',   name:'Chamber of Secrets',  icon:'🐍',desc:'Something slithers below.',   tx:35,ty:9, w:2,h:1, danger:3,lockYear:2,color:'#44cc88'},
+  {id:'quidditch', name:'Quidditch Pitch',      icon:'🧹',desc:'Join the Quidditch match!',   tx:51,ty:23,w:1,h:3, quidditch:true,color:'#88aaff'},
+  {id:'hagrid',    name:"Hagrid's Hut",         icon:'🏡',desc:'A friendly visit. Rest up.',  tx:16,ty:32,w:2,h:1, safe:true,  color:'#ddaa22'},
+  {id:'hogsmeade', name:'Hogsmeade Village',    icon:'🍺',desc:'Visit the village shop.',     tx:36,ty:41,w:2,h:1, shop:true,  color:'#ffaa44'},
+  {id:'shrieking', name:'Shrieking Shack',      icon:'🏚️',desc:'The most haunted place.',    tx:58,ty:51,w:2,h:1, danger:3,lockYear:3,color:'#cc88ff'},
+  {id:'graveyard', name:'Graveyard',            icon:'⚰️',desc:'Death Eaters gather here.',  tx:60,ty:38,w:6,h:5, danger:4,lockYear:4,color:'#cc4444'},
+  {id:'ministry',  name:'Ministry of Magic',    icon:'🏛️',desc:'Step through the portal.',   tx:64,ty:49,w:1,h:1, danger:4,lockYear:4,color:'#aa44ff'},
+  {id:'final',     name:'Battle of Hogwarts',   icon:'⚡',desc:'The final confrontation.',   tx:35,ty:4, w:3,h:2, danger:5,lockYear:7,color:'#ff4444'},
+  {id:'dorm',     name:'Dormitory',             icon:'🛏️',desc:'Rest in your house dormitory.',  tx:32,ty:5, w:8,h:4,dorm:true,              color:'#ffaadd'},
+  {id:'roomreq',  name:'Room of Requirement',  icon:'🚪',desc:'It appears to those who need it.',tx:20,ty:35,w:6,h:2,danger:2,lockYear:5,color:'#aa44ff'},
+  {id:'dragons',  name:'Dragon Enclosure',     icon:'🐉',desc:'Romanian dragon reserve.',     tx:65,ty:23,w:6,h:4,danger:3,lockYear:3,color:'#ff6622'},
+  {id:'honeydukes',name:'Honeydukes',          icon:'🍬',desc:'Magical sweets restore you.',  tx:31,ty:52,w:6,h:2,safe:true,              color:'#ff88cc'},
+  {id:'duel',     name:'Dueling Club',         icon:'⚔️',desc:'Practice combat spells!',       tx:57,ty:51,w:6,h:6,minigame:'spell',       color:'#ff6644'},
+  {id:'diagon',   name:'Diagon Alley',         icon:'🏪',desc:'The wizarding marketplace.',   tx:79,ty:41,w:3,h:3,shop:true,              color:'#ffdd44'},
+  {id:'azkaban',  name:'Azkaban Prison',       icon:'⛓️',desc:'The most dreaded wizard prison.',tx:77,ty:7, w:6,h:5,danger:4,lockYear:5,color:'#4466cc'},
+];
+
+// ── GAME DATA ─────────────────────────────────────
+const HOUSES={g:{name:'Gryffindor',color:'#cc3333',animal:'🦁',bonuses:{dmgPct:.15,maxHp:10}},s:{name:'Slytherin',color:'#226633',animal:'🐍',bonuses:{critChance:.20,maxMp:15}},r:{name:'Ravenclaw',color:'#2255cc',animal:'🦅',bonuses:{extraSpells:2,xpPct:.10}},h:{name:'Hufflepuff',color:'#cc9900',animal:'🦡',bonuses:{healPct:.25,startPotions:3}}};
+const SPELLS={
+  lumos:       {name:'Lumos',        icon:'✨',mana:0, dmg:[8,14],  desc:'Free light spell.',       ml:1},
+  expelliarmus:{name:'Expelliarmus', icon:'💫',mana:10,dmg:[20,32], desc:'Disarming charm.',        ml:1,effect:'disarm'},
+  stupefy:     {name:'Stupefy',      icon:'⚡',mana:15,dmg:[28,42], desc:'Stuns enemy 1 turn.',     ml:1,effect:'stun'},
+  wingardium:  {name:'Wingardium',   icon:'🌀',mana:18,dmg:[32,48], desc:'Levitate and slam.',      ml:3},
+  protego:     {name:'Protego',      icon:'🛡️',mana:20,dmg:[0,0],  desc:'Block 60% next hit.',     ml:4,effect:'shield'},
+  accio:       {name:'Accio',        icon:'🎯',mana:12,dmg:[15,22], desc:'Reduces enemy attack.',   ml:4,effect:'steal'},
+  patronus:    {name:'Expecto Patronum',icon:'🦌',mana:28,dmg:[35,55],desc:'Powerful vs Dementors.',ml:5,effect:'patronum'},
+  confringo:   {name:'Confringo',    icon:'🔥',mana:30,dmg:[48,68], desc:'Burns for 3 turns.',      ml:6,effect:'burn'},
+  reducto:     {name:'Reducto',      icon:'💥',mana:35,dmg:[62,82], desc:'Max raw damage.',         ml:7},
+  sectumsempra:{name:'Sectumsempra', icon:'🗡️',mana:38,dmg:[52,72],desc:'Bleeds for 3 turns.',     ml:8,effect:'bleed'},
+  crucio:      {name:'Crucio',       icon:'⚫',mana:45,dmg:[40,60], desc:'Curses the enemy.',       ml:10,effect:'curse'},
+  avada:       {name:'Avada Kedavra',icon:'☠️',mana:70,dmg:[999,999],desc:'Instant kill (65%).',   ml:12,effect:'kill'},
+  // ── Gryffindor ──────────────────────────────────
+  incendio:    {name:'Incendio',     icon:'🔥',mana:20,dmg:[28,42], desc:'Blazing fire — burns 3 turns.',       ml:2, effect:'burn',       house:'g'},
+  lionheart:   {name:"Lion's Roar", icon:'🦁',mana:34,dmg:[46,64], desc:'Shout of courage — stuns foe.',       ml:6, effect:'stun',       house:'g'},
+  fiendfyre:   {name:'Fiendfyre',   icon:'🌋',mana:58,dmg:[70,95], desc:'Unstoppable cursed fire — burns.',    ml:11,effect:'burn',       house:'g'},
+  // ── Slytherin ───────────────────────────────────
+  serpensortia:{name:'Serpensortia',icon:'🐍',mana:20,dmg:[26,40], desc:'Conjured serpent — bleeds.',          ml:2, effect:'bleed',      house:'s'},
+  bloodLeech:  {name:'Blood Leech', icon:'🩸',mana:34,dmg:[38,55], desc:'Drain foe\'s HP into yourself.',      ml:6, effect:'drain',      house:'s'},
+  morsmordre:  {name:'Morsmordre',  icon:'💀',mana:58,dmg:[66,90], desc:'Dark Mark — curses and destroys.',    ml:11,effect:'curse',      house:'s'},
+  // ── Ravenclaw ───────────────────────────────────
+  silencio:    {name:'Silencio',    icon:'🤫',mana:18,dmg:[22,34], desc:'Silence the enemy — stuns 1 turn.',   ml:2, effect:'stun',       house:'r'},
+  arithmancy:  {name:'Arithmancy', icon:'📐',mana:30,dmg:[42,58], desc:'Calculated strike — cuts enemy ATK.', ml:6, effect:'steal',      house:'r'},
+  legilimens:  {name:'Legilimens', icon:'🔮',mana:54,dmg:[58,82], desc:'Shatter the mind — stuns 2 turns.',   ml:11,effect:'stun',       house:'r'},
+  // ── Hufflepuff ──────────────────────────────────
+  herbivicus:  {name:'Herbivicus',  icon:'🌿',mana:18,dmg:[24,38], desc:'Vine whip — bleeds the enemy.',       ml:2, effect:'bleed',      house:'h'},
+  naturesGift: {name:"Nature's Gift",icon:'🌱',mana:26,dmg:[0,0],  desc:'Channel nature to restore HP.',       ml:6, effect:'natureheal', house:'h'},
+  earthbind:   {name:'Earthbind',  icon:'🌳',mana:54,dmg:[56,80], desc:'Ancient roots — crushes and bleeds.', ml:11,effect:'bleed',      house:'h'},
+};
+const ENEMIES={
+  pixie:     {name:'Cornish Pixie',      icon:'🧚',hp:45, atk:10,def:3, xp:25, gold:8, atks:['peck','swarm'],              story:'A mischievous pixie darts at you!',              color:'#44aacc'},
+  peeves:    {name:'Peeves',             icon:'👻',hp:70, atk:18,def:6, xp:45, gold:12,atks:['throw','taunt'],              story:'Peeves pelts you with objects!',                  color:'#aaaaff'},
+  troll:     {name:'Mountain Troll',     icon:'👹',hp:140,atk:32,def:14,xp:90, gold:30,atks:['smash','roar'],               story:'A massive troll blocks your path!',              color:'#888844',boss:true},
+  acromantula:{name:'Acromantula',       icon:'🕷️',hp:100,atk:26,def:9, xp:70, gold:20,atks:['bite','web'],                 story:"Aragog's offspring scuttles at you!",            color:'#996633'},
+  basilisk:  {name:'Basilisk',           icon:'🐍',hp:220,atk:52,def:22,xp:160,gold:60,atks:['gaze','strike'],              story:'The King of Serpents awakens!',                  color:'#55aa55',boss:true},
+  dementor:  {name:'Dementor',           icon:'🌑',hp:90, atk:38,def:6, xp:85, gold:0, atks:['soul_drain','kiss'],          story:'Cold fills your bones as a Dementor descends!',  color:'#334455',dW:true,time:'night'},
+  werewolf:  {name:'Werewolf',           icon:'🐺',hp:170,atk:45,def:16,xp:130,gold:25,atks:['savage','howl'],              story:'A werewolf advances under the full moon!',       color:'#887766',boss:true},
+  deathEater:{name:'Death Eater',        icon:'💀',hp:120,atk:40,def:14,xp:100,gold:35,atks:['dark_curse','crucio'],        story:'A masked Death Eater raises their wand!',        color:'#886699'},
+  bellatrix: {name:'Bellatrix Lestrange',icon:'🖤',hp:200,atk:58,def:20,xp:170,gold:70,atks:['crucio','volley'],            story:'Bellatrix cackles as curses fly!',                color:'#cc44aa',boss:true},
+  nagini:    {name:'Nagini',             icon:'🐍',hp:180,atk:48,def:15,xp:140,gold:40,atks:['strike','venom'],             story:"Voldemort's serpent lunges at you!",              color:'#66aa44',boss:true},
+  voldemort: {name:'Lord Voldemort',     icon:'🧙',hp:380,atk:72,def:26,xp:500,gold:0, atks:['avada','crucio','dark_wave'], story:'"The Boy Who Lived... come to die."',            color:'#cc4488',boss:true,final:true},
+  boggart:   {name:'Boggart',            icon:'👤',hp:65, atk:20,def:5, xp:55, gold:15,atks:['fear','throw'],               story:'A Boggart shifts into your worst fear!',          color:'#884499'},
+  horntail:  {name:'Hungarian Horntail', icon:'🐉',hp:280,atk:62,def:24,xp:200,gold:80,atks:['fire','tail','roar'],         story:'A Hungarian Horntail roars and breathes fire!',  color:'#dd4422',boss:true},
+  lucius:    {name:'Lucius Malfoy',      icon:'🧙',hp:155,atk:44,def:16,xp:120,gold:50,atks:['dark_curse','crucio'],        story:'Lucius Malfoy blocks the corridor!',              color:'#aaaaff',boss:true},
+  // ── Day-only creatures ──────────────────────────
+  gnome:     {name:'Garden Gnome',       icon:'🌱',hp:28, atk:7, def:1, xp:15, gold:6, atks:['throw','throw'],              story:'A garden gnome launches itself at your ankles!', color:'#88aa44',time:'day'},
+  grindylow: {name:'Grindylow',          icon:'🦑',hp:65, atk:19,def:7, xp:52, gold:16,atks:['web','throw'],                story:'A Grindylow lunges up from the dark water!',     color:'#227744',time:'day'},
+  hippogriff:{name:'Hippogriff',         icon:'🦅',hp:110,atk:29,def:12,xp:78, gold:24,atks:['talon','talon','strike'],     story:'A hippogriff rears up — you forgot to bow!',    color:'#aa8833',time:'day'},
+  // ── Night-only creatures ─────────────────────────
+  vampire:   {name:'Vampire',            icon:'🧛',hp:105,atk:37,def:10,xp:98, gold:26,atks:['bite','soul_drain','dark_curse'],story:'A vampire swoops silently from the shadows!',  color:'#882244',time:'night'},
+  banshee:   {name:'Banshee',            icon:'🌫️',hp:82, atk:29,def:6, xp:78, gold:14,atks:['wail','fear'],                story:"A banshee's shriek tears through the dark!",    color:'#ccddff',time:'night'},
+  inferius:  {name:'Inferius',           icon:'🧟',hp:78, atk:27,def:9, xp:68, gold:15,atks:['throw','dark_curse','fear'],   story:'An Inferius shambles out of the darkness!',     color:'#556644',time:'night'},
+};
+const ITEMS={
+  butterbeer: {name:'Butterbeer',        icon:'🍺',desc:'Restores 25 HP', price:12,effect:'hp',value:25},
+  wiggenweld: {name:'Wiggenweld Potion', icon:'🧪',desc:'Restores 60 HP', price:28,effect:'hp',value:60},
+  mandrake:   {name:'Mandrake Draught',  icon:'🌿',desc:'Restores 120 HP',price:55,effect:'hp',value:120},
+  mana_potion:{name:'Mana Potion',       icon:'💎',desc:'Restores 35 MP', price:22,effect:'mp',value:35},
+  felix:      {name:'Felix Felicis',     icon:'⭐',desc:'Next spell 2× power',price:80,effect:'luck',value:1},
+  chocolate:  {name:'Chocolate',         icon:'🍫',desc:'Wards Dementor attacks',price:10,effect:'dW',value:1},
+};
+const ZONE_ENC={
+  forest:   {enc:['pixie','pixie','peeves','gnome','grindylow','hippogriff','acromantula','banshee','inferius'],boss:'troll',    bossYear:1},
+  chamber:  {enc:['acromantula','acromantula','boggart','inferius'],                                           boss:'basilisk', bossYear:2},
+  quidditch:{enc:['pixie','pixie','peeves','gnome'],                                                           boss:null},
+  shrieking:{enc:['peeves','boggart','dementor','dementor','vampire','banshee'],                               boss:'werewolf', bossYear:3},
+  graveyard:{enc:['deathEater','deathEater','boggart','inferius','inferius','vampire'],                        boss:'bellatrix',bossYear:5},
+  ministry: {enc:['deathEater','nagini','boggart','inferius'],                                                 boss:'nagini',   bossYear:6},
+  final:    {enc:['deathEater','deathEater','bellatrix','inferius','vampire'],                                 boss:'voldemort',bossYear:7},
+  roomreq:  {enc:['boggart','peeves','gnome','banshee'],                                                       boss:null},
+  dragons:  {enc:['hippogriff','hippogriff','acromantula','boggart','banshee','inferius'],                    boss:'horntail', bossYear:3},
+  azkaban:  {enc:['deathEater','boggart','dementor','dementor','vampire','inferius'],                          boss:'lucius',   bossYear:5},
+};
+
+// ── PLAYER ──────────────────────────────────────
+let P=null;
+function mkPlayer(name,house,gender){
+  const h=HOUSES[house];
+  const pl={name,house,gender:gender||'boy',level:1,xp:0,xpToNext:100,year:1,gold:50,
+    maxHp:100+(h.bonuses.maxHp||0),maxMp:60+(h.bonuses.maxMp||0),
+    hp:0,mp:0,atk:18,def:8,crit:(h.bonuses.critChance||.05),
+    spells:['lumos','expelliarmus','stupefy'],
+    inventory:{wiggenweld:2},status:[],defeatedBosses:[],
+    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
+  pl.hp=pl.maxHp;pl.mp=pl.maxMp;
+  if(house==='r')pl.spells.push('wingardium','accio');
+  if(house==='h')pl.inventory.wiggenweld=(pl.inventory.wiggenweld||0)+3;
+  const houseStarter={g:'incendio',s:'serpensortia',r:'silencio',h:'herbivicus'};
+  if(houseStarter[house]){pl.spells.push(houseStarter[house]);pl.equippedSpells.push(houseStarter[house]);}
+  return pl;
+}
+
+// ── CANVAS & CAMERA ──────────────────────────────
+const wc=document.getElementById('world');
+const wctx=wc.getContext('2d');
+let CW=0,CH=0,camX=0,camY=0,tCX=0,tCY=0;
+window.addEventListener('resize',()=>{CW=wc.width=window.innerWidth;CH=wc.height=window.innerHeight;});
+
+// ── INPUT ────────────────────────────────────────
+const keys={};
+window.addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)&&document.activeElement.tagName!=='INPUT')e.preventDefault();if(e.key==='Escape'){if(gameState==='map')G.openMenu();else if(gameState==='menu')G.closeMenu();else if(gameState==='loadout')G.closeLoadout();else if(gameState==='bag')G.closeBag();}});
+window.addEventListener('keyup',e=>{delete keys[e.key];});
+['dpU','dpL','dpR','dpD'].forEach(id=>{
+  const el=document.getElementById(id);
+  const k={dpU:'ArrowUp',dpL:'ArrowLeft',dpR:'ArrowRight',dpD:'ArrowDown'}[id];
+  el.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true;el.classList.add('pressed');});
+  el.addEventListener('pointerup',()=>{delete keys[k];el.classList.remove('pressed');});
+  el.addEventListener('pointerleave',()=>{delete keys[k];el.classList.remove('pressed');});
+});
+
+function touchA(){
+  initAudio();
+  const zp=document.getElementById('zprompt');
+  if(zp&&zp.style.display!=='none'){G.enterZone();return;}
+  // A only confirms active prompts — does not open menu
+}
+function touchB(){
+  const zp=document.getElementById('zprompt');
+  if(zp&&zp.style.display!=='none'){G.closePrompt();return;}
+  if(gameState==='menu')G.closeMenu();
+  else if(gameState==='loadout')G.closeLoadout();
+  else if(gameState==='bag')G.closeBag();
+  // B only dismisses open screens — does not open menu from map
+}
+['btnA','btnB'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('pointerdown',e=>{e.preventDefault();el.classList.add('pressed');(id==='btnA'?touchA:touchB)();});
+  el.addEventListener('pointerup',()=>el.classList.remove('pressed'));
+  el.addEventListener('pointerleave',()=>el.classList.remove('pressed'));
+});
+
+// ── AUDIO ─────────────────────────────────────────
+let AC=null;
+function initAudio(){if(!AC)try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+function note(f,d,t,v){t=t||'sine';v=v||.18;if(!AC)return;try{const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);o.type=t;o.frequency.setValueAtTime(f,AC.currentTime);o.frequency.exponentialRampToValueAtTime(f*.5,AC.currentTime+d);g.gain.setValueAtTime(v,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.start();o.stop(AC.currentTime+d);}catch(e){}}
+function sfx(t){if(!AC)return;switch(t){
+  case'step':note(80+Math.random()*20,.05,'sine',.03);break;
+  case'spell':note(660,.12);setTimeout(()=>note(880,.18),70);setTimeout(()=>note(1100,.22),160);break;
+  case'hit':note(200,.1,'sawtooth',.12);break;
+  case'spellImpact':
+    note(1600,.035,'square',.14);
+    setTimeout(()=>note(800,.07,'square',.13),30);
+    setTimeout(()=>note(440,.10,'square',.11),88);
+    setTimeout(()=>note(220,.14,'sawtooth',.08),158);
+    break;
+  case'takeDmg':
+    note(160,.12,'sawtooth',.19);
+    setTimeout(()=>note(110,.16,'sawtooth',.16),55);
+    setTimeout(()=>note(75,.22,'sawtooth',.11),125);
+    break;
+  case'buff':
+    note(659,.07,'triangle',.09);
+    setTimeout(()=>note(784,.07,'triangle',.10),85);
+    setTimeout(()=>note(988,.08,'triangle',.11),170);
+    setTimeout(()=>note(1175,.13,'triangle',.10),255);
+    break;
+  case'heal':note(523,.1);setTimeout(()=>note(659,.1),80);setTimeout(()=>note(784,.18),160);break;
+  case'lvl':[523,659,784,1047].forEach((f,i)=>setTimeout(()=>note(f,.15),i*100));break;
+  case'win':[523,523,784,659,784,1047].forEach((f,i)=>setTimeout(()=>note(f,.18),i*140));break;
+  case'die':note(220,.3,'sawtooth');setTimeout(()=>note(110,.5,'sawtooth'),200);break;
+}}
+
+// ── MUSIC ─────────────────────────────────────────
+const MUS=(function(){
+  let _id=0,_cur=null,_muted=false,_saved=null;
+  // [freq_hz, dur_ms]  •  0 = rest
+  const TR={
+    explore:{vol:.055,wave:'square',seq:[
+      // ── Opening fanfare ──────────────────────────
+      [587,238],[740,238],[880,238],[1175,952],[0,238],
+      [880,476],[740,476],[587,952],[0,476],
+      // ── Sweeping main theme ──────────────────────
+      [988,476],[880,238],[784,238],[740,476],[880,476],
+      [784,476],[740,238],[659,238],[587,952],[0,238],
+      [740,476],[784,476],[880,476],[988,476],
+      [1175,952],[880,952],[0,476],
+      // ── Rising climax ────────────────────────────
+      [659,476],[740,476],[784,476],[880,476],
+      [988,476],[1109,476],[1175,952],[0,238],
+      [880,238],[784,238],[740,476],[659,476],
+      [587,1904],[0,476],
+    ]},
+    battle:{vol:.048,wave:'square',seq:[
+      [659,200],[494,200],[392,400],[0,100],[659,200],[494,200],[392,400],[0,100],
+      [659,200],[494,200],[392,400],[0,100],[698,400],[880,400],[0,200],
+      [587,200],[440,200],[349,400],[0,100],[587,200],[440,200],[349,400],[0,100],
+      [392,400],[330,400],[0,200],[440,200],[494,200],[659,400],[0,200],
+      [784,400],[659,400],[0,100],[523,400],[392,400],[0,200],
+      [659,200],[784,200],[988,400],[0,100],[784,800],[0,400],
+    ]},
+    minigame:{vol:.042,wave:'square',seq:[
+      [523,188],[659,188],[784,375],[0,188],[523,188],[659,188],[784,375],[0,188],
+      [880,375],[784,375],[0,188],[659,375],[523,375],[0,375],
+      [587,188],[698,188],[880,375],[0,188],[587,188],[698,188],[880,375],[0,188],
+      [784,375],[659,375],[0,188],[523,750],[0,375],
+      [659,188],[784,188],[1047,375],[0,188],[988,375],[880,375],[0,188],
+      [784,188],[659,188],[523,375],[0,188],[587,750],[0,375],
+      [784,375],[784,188],[880,188],[0,188],[784,375],[698,375],[0,188],
+      [659,375],[523,375],[0,188],[392,750],[0,375],
+    ]},
+  };
+  function _seq(name,id){
+    const cfg=TR[name];if(!cfg||!AC)return;
+    let i=0;
+    function tick(){
+      if(_id!==id)return;
+      if(i>=cfg.seq.length)i=0;
+      const[f,d]=cfg.seq[i++];
+      if(f>0){try{
+        const o=AC.createOscillator(),g=AC.createGain();
+        o.connect(g);g.connect(AC.destination);
+        o.type=cfg.wave;o.frequency.value=f;
+        const t=AC.currentTime;
+        g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(cfg.vol,t+.008);
+        g.gain.setValueAtTime(cfg.vol,t+d/1000-.04);g.gain.linearRampToValueAtTime(0,t+d/1000);
+        o.start(t);o.stop(t+d/1000+.05);
+      }catch(e){}}
+      setTimeout(tick,d);
+    }
+    tick();
+  }
+  return{
+    play(name){if(_muted||_cur===name)return;initAudio();_cur=name;_seq(name,++_id);},
+    stop(){_id++;_cur=null;},
+    mute(){_muted=!_muted;if(_muted){_saved=_cur;this.stop();}else{_cur=null;if(_saved)this.play(_saved);}return _muted;},
+    get isMuted(){return _muted;},
+  };
+})();
+
+// ── PARTICLES ─────────────────────────────────────
+let parts=[];
+function spawnParts(color,n,x,y){for(let i=0;i<n;i++)parts.push({x:x+(Math.random()-.5)*20,y:y+(Math.random()-.5)*20,vx:(Math.random()-.5)*3,vy:-(1+Math.random()*3),life:1,color});}
+function updateParts(){parts=parts.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.life-=.035;return p.life>0;});}
+function drawParts(){parts.forEach(p=>{wctx.globalAlpha=p.life;wctx.fillStyle=p.color;wctx.beginPath();wctx.arc(p.x,p.y,3*p.life,0,6.28);wctx.fill();});wctx.globalAlpha=1;}
+
+// ── TOAST ─────────────────────────────────────────
+function toast(msg,dur){dur=dur||2500;const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),dur);}
+
+// ── HUD ───────────────────────────────────────────
+function updateHUD(){
+  if(!P)return;
+  document.getElementById('hname').textContent=P.name;
+  document.getElementById('hlv').textContent='Lv '+P.level;
+  document.getElementById('hgold').textContent='⚡'+P.gold+'G';
+  document.getElementById('hyr').textContent='Yr '+P.year;
+  const hp=Math.max(0,P.hp/P.maxHp*100),mp=Math.max(0,P.mp/P.maxMp*100),xp=Math.min(100,P.xp/P.xpToNext*100);
+  document.getElementById('bhp').style.width=hp+'%';document.getElementById('bmp').style.width=mp+'%';document.getElementById('bxp').style.width=xp+'%';
+  document.getElementById('vhp').textContent=P.hp+'/'+P.maxHp;document.getElementById('vmp').textContent=P.mp+'/'+P.maxMp;document.getElementById('vxp').textContent=P.xp+'/'+P.xpToNext;
+}
+
+// ── MINIMAP ───────────────────────────────────────
+const mm=document.getElementById('minimap');
+const mmctx=mm.getContext('2d');
+const MC={[T.G]:'#3a6020',[T.DG]:'#1a2e08',[T.P]:'#7a6248',[T.W]:'#445566',[T.FT]:'#1a2e08',[T.DT]:'#0f1e06',[T.WA]:'#1a4a8a',[T.CW]:'#667788',[T.CF]:'#99aabb',[T.DO]:'#c9a227',[T.SH]:'#2d5218',[T.QP]:'#4f8834',[T.FL]:'#3a6020',[T.RK]:'#667788',[T.GR]:'#1e1e2a',[T.PO]:'#8822ff',[T.FE]:'#6b4a2a',[T.BR]:'#7a6248'};
+let mmOff=null;
+function buildMinimap(){
+  mmOff=document.createElement('canvas');mmOff.width=140;mmOff.height=105;
+  const mc=mmOff.getContext('2d');const S=140/MW;
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){mc.fillStyle=MC[MAP[y][x]]||'#3a6020';mc.fillRect(Math.floor(x*S),Math.floor(y*S),Math.ceil(S),Math.ceil(S));}
+  ZONES.forEach(z=>{mc.fillStyle=z.color+'88';mc.fillRect(z.tx*S,z.ty*S,z.w*S,z.h*S);});
+}
+function drawMinimap(){
+  if(!mmOff||!P)return;
+  mmctx.drawImage(mmOff,0,0);
+  const S=140/MW;
+  const mx=P.wx/TS*S,my=P.wy/TS*(105/MH);
+  mmctx.fillStyle='#fff';mmctx.beginPath();mmctx.arc(mx,my,3,0,6.28);mmctx.fill();
+}
+
+// ── ANIMATED TILES ────────────────────────────────
+function drawAnimated(now){
+  const wave=Math.sin(now*.002)*2;
+  const tx0=Math.floor(camX/TS),ty0=Math.floor(camY/TS);
+  const tx1=Math.min(MW-1,tx0+Math.ceil(CW/TS)+2),ty1=Math.min(MH-1,ty0+Math.ceil(CH/TS)+2);
+  for(let ty=ty0;ty<=ty1;ty++)for(let tx=tx0;tx<=tx1;tx++){
+    const tile=MAP[ty]&&MAP[ty][tx];
+    if(tile===T.WA){
+      const px=tx*TS-camX,py=ty*TS-camY;
+      wctx.fillStyle='#1a4a8a';wctx.fillRect(px,py,TS,TS);
+      wctx.fillStyle='#2260b0';wctx.fillRect(px+2,py+4+wave,TS-4,3);wctx.fillRect(px+4,py+14-wave,TS-8,3);wctx.fillRect(px+2,py+22+wave,TS-4,3);
+    }
+    if(tile===T.PO){
+      const px=tx*TS-camX,py=ty*TS-camY,pulse=.6+Math.sin(now*.005)*.4;
+      wctx.fillStyle='#1a0033';wctx.fillRect(px,py,TS,TS);
+      wctx.globalAlpha=pulse;
+      wctx.fillStyle='#4400aa';wctx.beginPath();wctx.ellipse(px+TS/2,py+TS/2,12,12,0,0,6.28);wctx.fill();
+      wctx.fillStyle='#8822ff';wctx.beginPath();wctx.ellipse(px+TS/2,py+TS/2,8,8,0,0,6.28);wctx.fill();
+      wctx.fillStyle='#cc88ff';wctx.beginPath();wctx.arc(px+TS/2,py+TS/2,4,0,6.28);wctx.fill();
+      wctx.globalAlpha=1;
+    }
+  }
+}
+
+// ── ZONE BEACONS ─────────────────────────────────
+function drawBeacons(now){
+  wctx.textAlign='center';
+  ZONES.forEach(z=>{
+    const wx=z.tx*TS+z.w*TS/2-camX,wy=(z.ty-0.5)*TS-camY;
+    if(wx<-40||wx>CW+40||wy<-60||wy>CH+40)return;
+    const pulse=.65+Math.sin(now*.003+z.tx*.5)*.35;
+    wctx.globalAlpha=pulse;
+    wctx.font='28px serif';wctx.fillText(z.icon,wx,wy);
+    wctx.globalAlpha=1;
+  });
+}
+
+// ── GAME STATE ───────────────────────────────────
+let gameState='title';
+let walkFrame=0,lastStep=0;
+let promptZone=null,isBusy=false;
+
+function enterMap(){
+  gameState='map';
+  document.getElementById('hud').classList.remove('off');
+  document.getElementById('minimap').classList.remove('off');
+  if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)||navigator.maxTouchPoints>1){document.getElementById('dpad').style.display='block';document.getElementById('gamebtns').style.display='block';}
+  MUS.play('explore');
+  updateHUD();
+}
+
+// ── ZONE DETECTION ───────────────────────────────
+function checkZones(){
+  if(isBusy||gameState!=='map')return;
+  const tx=Math.floor(P.wx/TS),ty=Math.floor(P.wy/TS);
+  for(const z of ZONES){
+    if(tx>=z.tx&&tx<z.tx+z.w&&ty>=z.ty&&ty<z.ty+z.h){
+      if(z===promptZone)return;
+      promptZone=z;showZonePrompt(z);return;
+    }
+  }
+  if(promptZone){promptZone=null;document.getElementById('zprompt').style.display='none';}
+}
+
+function showZonePrompt(z){
+  const el=document.getElementById('zprompt');
+  const locked=z.lockYear&&P.year<z.lockYear;
+  document.getElementById('zpname').textContent=z.icon+' '+z.name;
+  document.getElementById('zpdesc').textContent=locked?'Requires Year '+z.lockYear+' (you are Year '+P.year+').':z.desc;
+  document.getElementById('zpyes').disabled=!!locked;
+  el.style.display='block';
+}
+
+// ── ZONE ENTRY ────────────────────────────────────
+function enterZone(){
+  const z=promptZone;if(!z)return;
+  document.getElementById('zprompt').style.display='none';
+  if(z.safe){P.hp=P.maxHp;P.mp=P.maxMp;P.status=[];sfx('heal');spawnParts('#44dd88',20,CW/2,CH/2);toast('Fully restored!');updateHUD();saveGame();return;}
+  if(z.shop){G.showShop();return;}
+  if(z.dorm){G.showDorm();return;}
+  if(z.quidditch){QG.open();return;}
+  if(z.minigame==='spell'){SP.open();return;}
+  const cfg=ZONE_ENC[z.id];if(!cfg){toast('Peaceful here...');return;}
+  const bossReady=cfg.boss&&!P.defeatedBosses.includes(cfg.boss)&&P.year>=(cfg.bossYear||99);
+  if(bossReady){startBattle(cfg.boss);return;}
+  // Filter enc pool by time of day: night=0.80-0.20, day=0.27-0.70, twilight allows both
+  const tod=gameTime;
+  const pool=cfg.enc.filter(k=>{
+    const e=ENEMIES[k];if(!e)return false;
+    if(!e.time||e.time==='any')return true;
+    if(e.time==='night')return tod>0.70||tod<0.27; // night + twilight windows
+    if(e.time==='day') return tod>0.20&&tod<0.80;  // day + twilight windows
+    return true;
+  });
+  const enc=pool.length?pool:cfg.enc; // fallback to full pool if nothing matches
+  // Show time hint on first encounter with a time-specific creature
+  const chosen=enc[Math.floor(Math.random()*enc.length)];
+  const chosenE=ENEMIES[chosen];
+  if(chosenE&&chosenE.time==='night')toast('🌙 Night encounter!',1400);
+  else if(chosenE&&chosenE.time==='day')toast('☀️ Day creature spotted!',1400);
+  startBattle(chosen);
+}
+
+function closePrompt(){document.getElementById('zprompt').style.display='none';promptZone=null;}
+
+// ── BATTLE ───────────────────────────────────────
+let BS=null,btlBusy=false;
+
+function startBattle(eKey){
+  const ed=ENEMIES[eKey];if(!ed)return;
+  isBusy=true;gameState='battle';MUS.play('battle');
+  BS={enemy:{...ed,curHp:ed.hp,status:[],atkDeb:0},eKey,playerShield:false,wardUsed:false};
+  P.status=[];
+  document.getElementById('battleScr').classList.remove('off');
+  document.getElementById('zprompt').style.display='none';
+  document.getElementById('npcPrompt').style.display='none';activeNPCChallenge=null;
+  document.getElementById('eport').textContent=ed.icon;
+  document.getElementById('eport').style.filter='drop-shadow(0 0 20px '+(ed.color||'#cc4444')+')';
+  document.getElementById('ename').textContent=ed.name;
+  document.getElementById('ename').style.color=ed.color||'#ff8888';
+  btlBusy=false;renderBattle();addLog('⚔ '+ed.story,'ls');updateHUD();
+}
+
+function renderBattle(){
+  if(!BS)return;
+  // Player stats panel inside battle screen
+  document.getElementById('bpname').textContent=P.name;
+  document.getElementById('bplv').textContent='Lv '+P.level;
+  const php=Math.max(0,P.hp/P.maxHp*100),pmp=Math.max(0,P.mp/P.maxMp*100),pxp=Math.min(100,P.xp/P.xpToNext*100);
+  document.getElementById('bbhp').style.width=php+'%';
+  document.getElementById('bbmp').style.width=pmp+'%';
+  document.getElementById('bbxp').style.width=pxp+'%';
+  document.getElementById('bvhp').textContent=P.hp+'/'+P.maxHp;
+  document.getElementById('bvmp').textContent=P.mp+'/'+P.maxMp;
+  document.getElementById('bvxp').textContent=P.xp+'/'+P.xpToNext;
+  const e=BS.enemy;
+  const hp=Math.max(0,e.curHp/e.hp*100);
+  document.getElementById('ehpf').style.width=hp+'%';
+  document.getElementById('ehpf').style.background=hp>50?'linear-gradient(90deg,#991111,#ee3333)':hp>25?'linear-gradient(90deg,#995511,#ee8833)':'linear-gradient(90deg,#551111,#992211)';
+  document.getElementById('ehpt').textContent=Math.max(0,e.curHp)+'/'+e.hp;
+  document.getElementById('estat').innerHTML=e.status.map(s=>'<span class="sbadge sb-'+s.type+'">'+s.type.toUpperCase()+' '+s.turns+'t</span>').join('');
+  const eqSpells=P.equippedSpells&&P.equippedSpells.length?P.equippedSpells:P.spells.slice(0,6);
+  document.getElementById('sgrid').innerHTML=eqSpells.map(k=>{
+    const s=SPELLS[k];if(!s)return'';
+    const mc=P.perks.includes('mana_flow')?Math.max(0,s.mana-Math.floor(s.mana*.15)):s.mana;
+    const can=P.mp>=mc;
+    return'<button class="sbtn" onclick="B.cast(\''+k+'\')" '+(can?'':'disabled')+'><span class="sbn">'+s.icon+' '+s.name+'</span><span class="sbc">'+(mc?mc+' MP':'Free')+'</span><span class="sbd">'+(s.dmg[1]>0?s.dmg[0]+'-'+s.dmg[1]+' dmg':s.effect||'support')+'</span></button>';
+  }).join('');
+  const pots=Object.entries(P.inventory).filter(function(e){return e[1]>0&&ITEMS[e[0]]&&ITEMS[e[0]].effect==='hp';});
+  document.getElementById('btnItem').disabled=pots.length===0;
+  document.getElementById('btnItem').textContent='🧪 Potion ('+(pots.reduce(function(a,e){return a+e[1];},0))+')';
+}
+
+function addLog(msg,cls){const cl=document.getElementById('clog');const d=document.createElement('div');d.className='le '+(cls||'');d.textContent=msg;cl.appendChild(d);cl.scrollTop=cl.scrollHeight;if(cl.children.length>60)cl.removeChild(cl.children[0]);}
+function lockBtl(v){document.querySelectorAll('#sgrid .sbtn,#battleScr .btn').forEach(function(b){b.disabled=v;});}
+function applyFX(s){const ex=BS.enemy.status.find(function(e){return e.type===s.type;});if(ex)ex.turns=Math.max(ex.turns,s.turns);else BS.enemy.status.push(s);addLog('💫 '+BS.enemy.name+' is '+s.type+'ed!','ls');}
+
+function tickFX(){
+  let dot=0,stun=false;
+  BS.enemy.status=BS.enemy.status.filter(function(s){
+    if(s.type==='stun'){addLog('💫 '+BS.enemy.name+' is stunned!','ls');stun=true;s.turns--;return s.turns>0;}
+    if(s.dmg){dot+=s.dmg;addLog('🔥 '+s.dmg+' '+s.type+' dmg!','ld');}
+    s.turns--;return s.turns>0;
+  });
+  if(dot)BS.enemy.curHp=Math.max(0,BS.enemy.curHp-dot);
+  return stun;
+}
+
+const B={
+  cast:function(sk){
+    if(!BS||btlBusy)return;
+    const sp=SPELLS[sk];
+    const manaCost=P.perks.includes('mana_flow')?Math.max(0,sp.mana-Math.floor(sp.mana*.15)):sp.mana;
+    if(!sp||P.mp<manaCost){toast('Not enough mana!');return;}
+    if(!AC)initAudio();
+    btlBusy=true;lockBtl(true);P.mp-=manaCost;sfx('spell');
+    if(sp.effect==='shield'){BS.playerShield=true;addLog('🛡️ Protego! Shield activated.','lp');sfx('buff');updateHUD();setTimeout(function(){enemyTurn();},700);return;}
+    if(sp.effect==='natureheal'){const h=Math.min(P.maxHp-P.hp,28+P.level*4);P.hp+=h;addLog('🌿 Nature\'s Gift! +'+h+' HP','lh');sfx('heal');updateHUD();renderBattle();setTimeout(function(){if(chkEnd())return;enemyTurn();},700);return;}
+    let dmg=sp.dmg[0]+Math.floor(Math.random()*(sp.dmg[1]-sp.dmg[0]+1));
+    const hb=HOUSES[P.house].bonuses;
+    if(hb.dmgPct)dmg=Math.floor(dmg*(1+hb.dmgPct));
+    dmg=Math.floor(dmg*(1+P.level*.04));
+    if(P.luckyNext){dmg*=2;P.luckyNext=false;addLog('⭐ Felix Felicis! Double power!','ls');}
+    let crit=false;
+    const critRate=(P.crit||.05)+(P.perks.includes('slytherin_crit')?.15:0);
+    if(Math.random()<critRate){crit=true;dmg=Math.floor(dmg*1.6);addLog('💥 CRITICAL!','ls');}
+    if(sp.effect==='kill'&&!BS.enemy.boss){if(Math.random()<.65){addLog('☠️ Avada Kedavra — instant kill!','ld');dmg=BS.enemy.curHp;}else{dmg=Math.floor(BS.enemy.hp*.6);addLog('☠️ Partially resisted!','ld');}}
+    if(sp.effect==='patronum'&&BS.enemy.dW)dmg=Math.floor(dmg*2.2);
+    if(P.perks.includes('elder_power'))dmg=Math.floor(dmg*1.25);
+    if(P.perks.includes('dark_mastery')&&['crucio','sectumsempra','avada','confringo'].includes(sk))dmg=Math.floor(dmg*1.3);
+    const defPen=P.perks.includes('true_sight')?.3:.4;
+    dmg=Math.max(1,dmg-Math.floor(Math.max(0,BS.enemy.def-BS.enemy.atkDeb)*defPen));
+    BS.enemy.curHp=Math.max(0,BS.enemy.curHp-dmg);
+    addLog('✨ '+sp.name+'! '+dmg+' damage'+(crit?' (CRIT)':'')+'!','lp');if(crit){note(2200,.03,'square',.16);setTimeout(()=>sfx('spellImpact'),25);}else{sfx('spellImpact');}
+    const ep=document.getElementById('eport');ep.classList.remove('shake');void ep.offsetWidth;ep.classList.add('shake');
+    if(sp.effect==='stun'&&Math.random()<.6)applyFX({type:'stun',turns:1});
+    if(sp.effect==='burn')applyFX({type:'burn',turns:3,dmg:Math.floor(dmg*.25)});
+    if(sp.effect==='bleed')applyFX({type:'bleed',turns:3,dmg:Math.floor(dmg*.3)});
+    if(sp.effect==='curse')applyFX({type:'curse',turns:3,dmg:Math.floor(dmg*.2)});
+    if(sp.effect==='steal'){BS.enemy.atkDeb=Math.floor(BS.enemy.atk*.3);addLog('🎯 Enemy attack reduced!','ls');setTimeout(()=>sfx('buff'),200);}
+    if(sp.effect==='drain'){const d=Math.floor(dmg*.45);P.hp=Math.min(P.maxHp,P.hp+d);addLog('🩸 Life drained! +'+d+' HP','ls');setTimeout(()=>sfx('heal'),200);}
+    updateHUD();renderBattle();
+    setTimeout(function(){if(chkEnd())return;enemyTurn();},700);
+  },
+  openBattleBag:function(){
+    if(!BS||btlBusy)return;
+    const entries=Object.entries(P.inventory).filter(function(e){return e[1]>0&&ITEMS[e[0]];});
+    const grid=document.getElementById('battleBagGrid');
+    if(!entries.length){
+      grid.innerHTML='<span style="font-size:11px;opacity:.5;font-family:\'IM Fell English\',serif;padding:8px">Bag is empty.</span>';
+    }else{
+      grid.innerHTML=entries.map(function(e){
+        const k=e[0],qty=e[1],it=ITEMS[k];
+        let canUse=true,reason='';
+        if(it.effect==='hp'&&P.hp>=P.maxHp){canUse=false;reason='HP full';}
+        if(it.effect==='mp'&&P.mp>=P.maxMp){canUse=false;reason='MP full';}
+        if(it.effect==='luck'&&P.luckyNext){canUse=false;reason='Active';}
+        if(it.effect==='dW'&&P.dW){canUse=false;reason='Active';}
+        return'<div style="background:rgba(5,2,16,.8);border:1px solid rgba(200,162,39,'+(canUse?'.4':'.15')+');border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:8px;min-width:120px;flex:1;max-width:160px;opacity:'+(canUse?'1':'.6')+'">'+
+          '<span style="font-size:20px;line-height:1">'+it.icon+'</span>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:9px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+it.name+'</div>'+
+            '<div style="font-size:8px;color:var(--muted)">×'+qty+' · '+it.desc+'</div>'+
+          '</div>'+
+          '<button onclick="B.useBattleItem(\''+k+'\')" '+(canUse?'':'disabled')+
+            ' style="font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid rgba(200,162,39,'+(canUse?'.5':'.2')+');background:rgba(200,162,39,'+(canUse?'.12':'.04')+');color:'+(canUse?'var(--gold)':'var(--muted)')+';cursor:'+(canUse?'pointer':'not-allowed')+';font-family:\'Cinzel\',serif">'+
+            (canUse?'Use':reason)+'</button>'+
+        '</div>';
+      }).join('');
+    }
+    document.getElementById('battleBagPanel').style.display='block';
+  },
+  closeBattleBag:function(){document.getElementById('battleBagPanel').style.display='none';},
+  useBattleItem:function(k){
+    if(!BS||btlBusy)return;
+    const it=ITEMS[k];if(!it||!(P.inventory[k]>0))return;
+    this.closeBattleBag();
+    if(it.effect==='hp'){
+      if(P.hp>=P.maxHp){toast('HP already full!');return;}
+      let h=it.value;
+      const hb2=(HOUSES[P.house].bonuses.healPct||0)+(P.perks.includes('hufflepuff_heal')?.3:0)+(P.perks.includes('brew_master')?.5:0);
+      if(hb2)h=Math.floor(h*(1+hb2));
+      P.hp=Math.min(P.maxHp,P.hp+h);sfx('heal');addLog('🧪 '+it.name+'! +'+h+' HP','lh');
+    }else if(it.effect==='mp'){
+      if(P.mp>=P.maxMp){toast('MP already full!');return;}
+      P.mp=Math.min(P.maxMp,P.mp+it.value);sfx('buff');addLog('💎 '+it.name+'! +'+it.value+' MP','lh');
+    }else if(it.effect==='luck'){
+      if(P.luckyNext){toast('Felix already active!');return;}
+      P.luckyNext=true;sfx('buff');addLog('⭐ Felix Felicis! Next spell 2× power!','ls');
+    }else if(it.effect==='dW'){
+      if(P.dW){toast('Already warded!');return;}
+      P.dW=true;sfx('buff');addLog('🍫 Chocolate! Dementor ward active.','lh');
+    }
+    P.inventory[k]--;
+    updateHUD();renderBattle();
+    btlBusy=true;lockBtl(true);setTimeout(function(){enemyTurn();},700);
+  },
+  flee:function(){
+    if(!BS||btlBusy)return;
+    if(BS.enemy.boss){toast("Can't flee boss battles!");return;}
+    if(Math.random()<.5){toast('Escaped!');closeBattle();}
+    else{addLog('Escape failed!','lm');btlBusy=true;lockBtl(true);setTimeout(function(){enemyTurn();},700);}
+  }
+};
+
+function enemyTurn(){
+  if(!BS){btlBusy=false;return;}
+  if(chkEnd())return;
+  const stunned=tickFX();renderBattle();if(chkEnd())return;
+  if(stunned){updateHUD();btlBusy=false;lockBtl(false);return;}
+  setTimeout(function(){
+    const e=BS.enemy,atk=e.atks[Math.floor(Math.random()*e.atks.length)];
+    const pDef=P.def+(P.perks.includes('cold_blood')?10:0);
+    let dmg=Math.max(3,Math.floor(e.atk*(.8+Math.random()*.5))-Math.floor(pDef*.35));
+    if(e.boss&&P.perks.includes('auror_sight'))dmg=Math.floor(dmg*.8);
+    let skip=false;
+    if(P.perks.includes('seeker_dodge')&&Math.random()<.15){skip=true;addLog('⚡ Reflexes! Attack dodged!','ls');}
+    switch(atk){
+      case'soul_drain':addLog('🌑 Soul drain!','le_');P.mp=Math.max(0,P.mp-Math.floor(P.mp*.35));if(P.dW)dmg=Math.floor(dmg*.5);break;
+      case'kiss':if(P.spells.includes('patronus')){addLog('🦌 Patronus drives it back!','ls');skip=true;}else dmg=Math.floor(P.hp*.5);break;
+      case'gaze':if(BS.playerShield||P.spells.includes('protego')){addLog('🐍 Gaze deflected!','ls');dmg=Math.floor(dmg*.3);}else{dmg=Math.floor(P.hp*.35);addLog('🐍 BASILISK GAZE!','ld');}break;
+      case'avada':dmg=Math.floor(P.maxHp*.25);addLog('☠️ Avada Kedavra rebounds!','le_');break;
+      case'dark_wave':dmg=Math.floor(dmg*1.3);addLog('💀 Dark magic wave!','le_');break;
+      case'fire':dmg=Math.floor(dmg*1.4);addLog('🔥 Dragon fire engulfs you!','ld');break;
+      case'tail':dmg=Math.floor(dmg*1.2);addLog('🐉 Spiked tail swipe!','le_');break;
+      case'roar':addLog('🐉 Deafening roar! You flinch.','le_');P.mp=Math.max(0,P.mp-10);break;
+      case'fear':addLog('👤 Your worst fear grips you!','le_');P.mp=Math.max(0,P.mp-15);break;
+      case'throw':addLog('💥 Hurled across the room!','le_');break;
+      case'talon':dmg=Math.floor(dmg*1.35);addLog('🦅 Razor talons rake across you!','ld');break;
+      case'bite':{const lifesteal=Math.floor(dmg*.3);BS.enemy.curHp=Math.min(BS.enemy.hp,BS.enemy.curHp+lifesteal);addLog('🧛 Life drain! (+'+lifesteal+' HP to vampire)','ld');break;}
+      case'wail':addLog('🌫️ The banshee\'s wail freezes you in terror!','ld');P.mp=Math.max(0,P.mp-22);break;
+      default:addLog('⚡ '+e.name+' attacks!','le_');
+    }
+    if(!skip){
+      if(BS.playerShield){const bl=Math.floor(dmg*.6);dmg-=bl;BS.playerShield=false;addLog('🛡️ Protego blocks '+bl+'!','ls');}
+      if(dmg>0){P.hp=Math.max(0,P.hp-dmg);addLog('💔 '+dmg+' damage! ('+P.hp+'/'+P.maxHp+')',P.hp<P.maxHp*.25?'ld':'le_');sfx('takeDmg');}
+    }
+    if(P.perks.includes('regen_spirit')&&P.hp>0&&P.hp<P.maxHp*.3){const rg=8;P.hp=Math.min(P.maxHp,P.hp+rg);addLog('💚 Regen Spirit: +'+rg+' HP','lh');}
+    updateHUD();renderBattle();if(chkEnd())return;
+    btlBusy=false;lockBtl(false);
+  },600);
+}
+
+function chkEnd(){
+  if(BS.enemy.curHp<=0){endBattle(true);return true;}
+  if(P.hp<=0){
+    if(P.perks.includes('chosen_ward')&&!BS.wardUsed){
+      P.hp=1;BS.wardUsed=true;addLog('🔥 Phoenix Ward! You survive at 1 HP!','ls');updateHUD();return false;
+    }
+    P.hp=0;updateHUD();endBattle(false);return true;
+  }
+  return false;
+}
+
+function endBattle(won,fled){
+  btlBusy=false;if(fled){closeBattle();return;}
+  if(won){
+    const e=BS.enemy;sfx('win');
+    const xp=Math.floor(e.xp*(1+(HOUSES[P.house].bonuses.xpPct||0)));
+    addLog('🏆 Defeated '+e.name+'! +'+xp+' XP +'+e.gold+'G','ls');
+    P.gold+=e.gold;if(e.boss)P.defeatedBosses.push(BS.eKey);
+    if(e.final){setTimeout(function(){showEnd(true);},1000);return;}
+    gainXP(xp);if(currentNPCChallenge)handleNPCChallengeWin(currentNPCChallenge);setTimeout(function(){closeBattle();},1800);
+  } else {sfx('die');document.getElementById('battleScr').classList.add('off');showEnd(false);}
+}
+
+function closeBattle(){
+  document.getElementById('battleScr').classList.add('off');
+  document.getElementById('battleBagPanel').style.display='none';
+  BS=null;isBusy=false;gameState='map';promptZone=null;currentNPCChallenge=null;updateHUD();saveGame();
+}
+
+// ── XP / LEVEL ───────────────────────────────────
+function gainXP(amt){
+  if(P.perks.includes('luna_xp'))amt=Math.floor(amt*1.2);
+  P.xp+=amt;
+  while(P.xp>=P.xpToNext){P.xp-=P.xpToNext;doLevelUp();}
+  updateHUD();saveGame();
+}
+function doLevelUp(){
+  P.level++;P.xpToNext=Math.floor(100*Math.pow(1.35,P.level-1));
+  P.maxHp=Math.floor(P.maxHp*1.12+8);P.maxMp=Math.floor(P.maxMp*1.1+5);
+  P.hp=P.maxHp;P.mp=P.maxMp;P.atk=Math.floor(P.atk*1.08+2);P.def=Math.floor(P.def*1.08+1);
+  const yt={2:4,3:7,4:10,5:14,6:18,7:23};Object.entries(yt).forEach(function(e){if(P.level>=e[1]&&P.year<+e[0])P.year=+e[0];});
+  sfx('lvl');spawnParts('#c9a227',30,CW/2,CH/2);
+  const avail=Object.entries(SPELLS).filter(function(e){return!P.spells.includes(e[0])&&e[1].ml<=P.level&&(!e[1].house||e[1].house===P.house);});
+  if(avail.length)showLvl(avail);else toast('Level '+P.level+'!');
+}
+function showLvl(choices){
+  gameState='lvl';
+  document.getElementById('lvlScr').classList.remove('off');
+  document.getElementById('lvlMsg').textContent='Reached Level '+P.level+'! Learn a spell:';
+  document.getElementById('lvlChoices').innerHTML=choices.slice(0,3).map(function(e){
+    const k=e[0],s=e[1];
+    return'<button class="schoice" onclick="G.learnSpell(\''+k+'\')"><h4>'+s.icon+' '+s.name+'</h4><p>'+s.desc+'<br><span style="color:#5577cc;font-size:10px;font-family:Cinzel,serif">'+(s.mana?s.mana+' MP':'Free')+' · '+(s.dmg[1]>0?s.dmg[0]+'-'+s.dmg[1]+' dmg':'Support')+'</span></p></button>';
+  }).join('');
+}
+
+// ── SHOP ─────────────────────────────────────────
+function renderShop(){
+  document.getElementById('shopGold').textContent='Your Galleons: '+P.gold+'G';
+  document.getElementById('shopItems').innerHTML=Object.entries(ITEMS).map(function(e){
+    const k=e[0],it=e[1];
+    return'<div class="sitem"><span class="sico">'+it.icon+'</span><div class="sinf"><h4>'+it.name+' '+((P.inventory[k]||0)>0?'('+P.inventory[k]+')':'')+'</h4><p>'+it.desc+'</p></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><span class="sprc">'+it.price+'G</span><button class="btn sm" onclick="G.buyItem(\''+k+'\')" '+(P.gold>=it.price?'':'disabled')+'>Buy</button></div></div>';
+  }).join('');
+}
+
+// ── END ───────────────────────────────────────────
+function showEnd(won){
+  gameState='end';
+  document.getElementById('battleScr').classList.add('off');
+  document.getElementById('endScr').classList.remove('off');
+  document.getElementById('hud').classList.add('off');
+  document.getElementById('minimap').classList.add('off');
+  document.getElementById('endTitle').style.color=won?'#c9a227':'#cc4444';
+  document.getElementById('endTitle').textContent=won?'You Defeated Voldemort!':'Defeated';
+  document.getElementById('endMsg').innerHTML=won?'Hogwarts is saved! The Wizarding World is free.<br><br><strong style="color:var(--gold)">Level '+P.level+' · Year '+P.year+'</strong>':'You were defeated in battle...<br>You reached Level '+P.level+', Year '+P.year+'.<br>Your legend lives on.';
+}
+
+// ── SAVE / LOAD ───────────────────────────────────
+function slotKey(n){return 'hpa2_s'+n;}
+function getActiveSlot(){return parseInt(localStorage.getItem('hpa2_active')||'1');}
+function setActiveSlot(n){localStorage.setItem('hpa2_active',String(n));}
+function getSlotData(n){const r=localStorage.getItem(slotKey(n));return r?JSON.parse(r):null;}
+function migrateOldSave(){const old=localStorage.getItem('hpa2');if(!old)return;try{const p=JSON.parse(old);if(!getSlotData(1))localStorage.setItem(slotKey(1),JSON.stringify({player:p,savedAt:Date.now()}));}catch(e){}localStorage.removeItem('hpa2');}
+function sanitizePlayer(p){
+  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};
+  // Backfill house starter for old saves that pre-date house spells
+  const houseStarter={g:'incendio',s:'serpensortia',r:'silencio',h:'herbivicus'};
+  const hs=houseStarter[p.house];
+  if(hs&&!p.spells.includes(hs))p.spells.push(hs);
+  // Ravenclaw bonus spells
+  if(p.house==='r'){['wingardium','accio'].forEach(function(k){if(!p.spells.includes(k))p.spells.push(k);});}
+  // Rebuild equippedSpells
+  if(!p.equippedSpells||!p.equippedSpells.length)p.equippedSpells=p.spells.slice(0,6);
+  p.equippedSpells=p.equippedSpells.filter(function(k){return p.spells.includes(k);});
+  if(!p.equippedSpells.length)p.equippedSpells=p.spells.slice(0,6);
+  // Auto-fill empty equipped slots with known spells (never leave slots empty if spells available)
+  p.spells.forEach(function(k){if(p.equippedSpells.length<6&&!p.equippedSpells.includes(k))p.equippedSpells.push(k);});
+  p.studiedToday=false;return p;
+}
+function saveGame(){if(!P)return;const n=getActiveSlot();localStorage.setItem(slotKey(n),JSON.stringify({player:P,savedAt:Date.now()}));}
+function loadSave(){migrateOldSave();const n=getActiveSlot();const d=getSlotData(n);if(!d)return null;return sanitizePlayer(d.player||d);}
+function renderSlotList(){
+  migrateOldSave();
+  const el=document.getElementById('slotListEl');if(!el)return;
+  const mode=G._slotMode||'load';
+  const active=getActiveSlot();
+  el.innerHTML='';
+  for(let n=1;n<=6;n++){
+    const data=getSlotData(n);
+    const isActive=n===active;
+    const card=document.createElement('div');
+    card.className='sv-card'+(isActive?' sv-active':'')+(data?'':' sv-empty');
+    if(data){
+      const p=data.player||data;
+      const hc=HOUSES[p.house]?HOUSES[p.house].color:'#888';
+      const hname=HOUSES[p.house]?HOUSES[p.house].name:'Unknown';
+      const dateStr=new Date(data.savedAt||0).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      const cvs=document.createElement('canvas');cvs.width=48;cvs.height=60;
+      cvs.style.cssText='border-radius:6px;background:#050210;border:1px solid '+hc+'55;flex-shrink:0';
+      card.appendChild(cvs);
+      setTimeout(function(){try{drawWizard(cvs.getContext('2d'),24,30,'down',0,hc,false,p.gender||'boy');}catch(e){}},0);
+      const info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
+      info.innerHTML='<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">'+
+        '<span style="font-size:10px;color:var(--gold);font-weight:700">Slot '+n+'</span>'+
+        (isActive?'<span style="font-size:8px;background:rgba(200,162,39,.18);border:1px solid var(--gold);border-radius:6px;padding:0 5px;color:var(--gold)">ACTIVE</span>':'')+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--text);font-family:\'IM Fell English\',serif">'+p.name+'</div>'+
+        '<div style="font-size:10px;color:var(--muted)">'+hname+' · Lv '+p.level+' · Year '+p.year+'</div>'+
+        '<div style="font-size:9px;color:#4a3a6a;margin-top:2px">'+dateStr+'</div>';
+      card.appendChild(info);
+      const btns=document.createElement('div');btns.style.cssText='display:flex;flex-direction:column;gap:5px;flex-shrink:0';
+      if(mode==='new'){
+        btns.innerHTML='<button class="btn sm" style="font-size:9px;padding:4px 9px;background:#440a0a;border-color:#993333;color:#ffaaaa" onclick="G.pickSlotForNew('+n+')">⚠ Overwrite</button>';
+      }else{
+        btns.innerHTML='<button class="btn sm" style="font-size:9px;padding:4px 9px" onclick="G.loadFromSlot('+n+')">▶ Load</button>'+
+          '<button class="btn sm red" style="font-size:9px;padding:4px 9px" onclick="G.confirmDeleteSlot('+n+')">🗑</button>';
+      }
+      card.appendChild(btns);
+    }else{
+      card.innerHTML='<div style="width:48px;height:60px;flex-shrink:0;border-radius:6px;background:#0a0520;border:1.5px dashed rgba(200,162,39,.2);display:flex;align-items:center;justify-content:center;font-size:22px;color:rgba(200,162,39,.3)">+</div>'+
+        '<div style="flex:1"><div style="font-size:10px;color:var(--gold)">Slot '+n+'</div><div style="font-size:10px;color:var(--muted);margin-top:3px">— Empty Slot —</div></div>'+
+        '<button class="btn sm" style="font-size:9px;padding:4px 9px;flex-shrink:0" onclick="G.pickSlotForNew('+n+')">'+(mode==='new'?'✓ Use Slot':'✨ New Here')+'</button>';
+    }
+    el.appendChild(card);
+  }
+}
+
+// ── MOVEMENT ─────────────────────────────────────
+function tryMove(dx,dy){
+  const sp=2.2,m=10;
+  const nx=P.wx+dx*sp,ny=P.wy+dy*sp;
+  function ok(x,y){const tx=Math.floor(x/TS),ty=Math.floor(y/TS);if(tx<0||ty<0||tx>=MW||ty>=MH)return false;return WALK.has(MAP[ty]&&MAP[ty][tx]);}
+  const pts=[[nx-m,ny-m],[nx+m,ny-m],[nx-m,ny+m],[nx+m,ny+m]];
+  if(pts.every(function(p){return ok(p[0],P.wy);}))P.wx=nx;
+  if(pts.every(function(p){return ok(P.wx,p[1]);}))P.wy=ny;
+}
+
+// ── GLOBAL CONTROLLER ────────────────────────────
+let selHouse=null,selGender=null;
+function updateAvatarPreview(){
+  const ac=document.getElementById('avatarPreview');if(!ac)return;
+  const ctx=ac.getContext('2d');
+  ctx.clearRect(0,0,ac.width,ac.height);
+  const hc=selHouse?HOUSES[selHouse].color:'#888';
+  const g=selGender||'boy';
+  drawWizard(ctx,55,70,'down',0,hc,false,g);
+}
+const G={
+  showTitle:function(){
+    ['createScr','battleScr','shopScr','lvlScr','endScr','pauseScr','loadoutScr','bagScr','slotScr'].forEach(function(id){document.getElementById(id).classList.add('off');});
+    document.getElementById('hud').classList.add('off');document.getElementById('minimap').classList.add('off');
+    document.getElementById('titleScr').classList.remove('off');
+    document.getElementById('npcPrompt').style.display='none';activeNPCChallenge=null;
+    isBusy=false;BS=null;gameState='map';MUS.stop();
+    migrateOldSave();
+    let anySlot=false;for(let i=1;i<=6;i++){if(getSlotData(i)){anySlot=true;break;}}
+    const activeSave=getSlotData(getActiveSlot());
+    document.getElementById('btnContinue').style.display=activeSave?'':'none';
+    document.getElementById('btnSlots').style.display=anySlot?'':'none';
+  },
+  acceptChallenge:function(){if(activeNPCChallenge)startNPCBattle(activeNPCChallenge);},
+  declineChallenge:function(){document.getElementById('npcPrompt').style.display='none';activeNPCChallenge=null;},
+  showCreate:function(){['titleScr','slotScr'].forEach(function(id){document.getElementById(id).classList.add('off');});document.getElementById('createScr').classList.remove('off');updateAvatarPreview();},
+  selHouse:function(h){selHouse=h;['g','s','r','h'].forEach(function(k){document.getElementById('h'+k).classList.toggle('sel',k===h);});updateAvatarPreview();},
+  selGender:function(g){selGender=g;['boy','girl'].forEach(function(k){document.getElementById('g'+k).classList.toggle('sel',k===g);});updateAvatarPreview();},
+  startGame:function(){
+    const nm=document.getElementById('pname').value.trim()||'Harry Potter';
+    if(!selGender){toast('Choose your character!');return;}
+    if(!selHouse){toast('Choose your house!');return;}
+    if(!AC)initAudio();
+    P=mkPlayer(nm,selHouse,selGender);
+    // Auto-pick first empty slot if active slot already has a save and we didn't pre-select
+    if(!G._slotPicked){const cur=getActiveSlot();if(getSlotData(cur)){for(let i=1;i<=6;i++){if(!getSlotData(i)){setActiveSlot(i);break;}}}}
+    G._slotPicked=false;
+    document.getElementById('createScr').classList.add('off');
+    document.getElementById('titleScr').classList.add('off');
+    saveGame();initWorld();sfx('lvl');
+  },
+  loadGame:function(){
+    migrateOldSave();const n=getActiveSlot();const d=getSlotData(n);
+    if(!d){toast('No save in Slot '+n+'! Use Load / Manage Saves.');return;}
+    P=sanitizePlayer(d.player||d);if(!AC)initAudio();
+    document.getElementById('titleScr').classList.add('off');
+    toast('Welcome back, '+P.name+'! (Slot '+n+')');initWorld();
+  },
+  _slotMode:'load',_slotPicked:false,_swapPending:null,
+  showSlots:function(mode){
+    G._slotMode=mode||'load';
+    document.getElementById('slotModeLabel').textContent=mode==='new'?'— Pick a slot for your new adventure':'— Load or manage your saves';
+    ['titleScr','createScr','pauseScr'].forEach(function(id){document.getElementById(id).classList.add('off');});
+    document.getElementById('slotScr').classList.remove('off');
+    renderSlotList();
+  },
+  closeSlots:function(){
+    document.getElementById('slotScr').classList.add('off');
+    G.showTitle();
+  },
+  loadFromSlot:function(n){
+    const data=getSlotData(n);if(!data){toast('Slot '+n+' is empty!');return;}
+    setActiveSlot(n);P=sanitizePlayer(data.player||data);if(!AC)initAudio();
+    document.getElementById('slotScr').classList.add('off');
+    document.getElementById('titleScr').classList.add('off');
+    toast('Welcome back, '+P.name+'! (Slot '+n+')');initWorld();
+  },
+  pickSlotForNew:function(n){
+    setActiveSlot(n);G._slotPicked=true;
+    document.getElementById('slotScr').classList.add('off');
+    G.showCreate();
+  },
+  confirmDeleteSlot:function(n){
+    if(!confirm('Delete Slot '+n+'? This cannot be undone.'))return;
+    localStorage.removeItem(slotKey(n));
+    if(getActiveSlot()===n){let next=1;for(let i=1;i<=6;i++){if(i!==n&&getSlotData(i)){next=i;break;}}setActiveSlot(next);}
+    renderSlotList();toast('Slot '+n+' deleted.');
+  },
+  enterZone:enterZone,closePrompt:closePrompt,
+  learnSpell:function(k){
+    P.spells.push(k);
+    if(P.equippedSpells.length<6){P.equippedSpells.push(k);toast('✨ Learned '+SPELLS[k].name+'! Auto-equipped.');}
+    else{toast('✨ Learned '+SPELLS[k].name+'!\nOpen Journal → Skills to swap it in.',3500);}
+    saveGame();G.closeLvl();
+  },
+  closeLvl:function(){document.getElementById('lvlScr').classList.add('off');gameState=isBusy?'battle':'map';},
+  showShop:function(){gameState='shop';document.getElementById('shopScr').classList.remove('off');renderShop();},
+  closeShop:function(){document.getElementById('shopScr').classList.add('off');gameState='map';},
+  buyItem:function(k){const it=ITEMS[k];if(P.gold<it.price){toast('Not enough Galleons!');return;}P.gold-=it.price;P.inventory[k]=(P.inventory[k]||0)+1;sfx('heal');toast('Bought '+it.name+'!');renderShop();updateHUD();saveGame();},
+  showDorm:function(){
+    const DD={
+      g:{bg:'linear-gradient(135deg,#3a0808,#6a1010)',color:'#ee4444',mascot:'🦁',traits:'Brave · Daring · Chivalrous',quote:'"It is our choices that show what we truly are." — Dumbledore'},
+      s:{bg:'linear-gradient(135deg,#082808,#0f4a1a)',color:'#44cc88',mascot:'🐍',traits:'Cunning · Ambitious · Resourceful',quote:'"Cunning folk use any means to achieve their ends." — Sorting Hat'},
+      r:{bg:'linear-gradient(135deg,#08082a,#101068)',color:'#4488ee',mascot:'🦅',traits:'Wise · Creative · Inventive',quote:'"Wit beyond measure is man\'s greatest treasure." — Rowena Ravenclaw'},
+      h:{bg:'linear-gradient(135deg,#2a2000,#5a4400)',color:'#ddaa22',mascot:'🦡',traits:'Loyal · Patient · Fair',quote:'"I\'ll teach the lot and treat them just the same." — Helga Hufflepuff'}
+    };
+    const d=DD[P.house],h=HOUSES[P.house];
+    document.getElementById('dormScr').classList.remove('off');
+    document.getElementById('dormBanner').style.background=d.bg;
+    document.getElementById('dormBanner').style.borderColor=h.color+'55';
+    document.getElementById('dormMascot').textContent=d.mascot;
+    document.getElementById('dormTitle').textContent=h.name+' Dormitory';
+    document.getElementById('dormTitle').style.color=h.color;
+    document.getElementById('dormQuote').textContent=d.quote;
+    document.getElementById('dormStats').innerHTML=
+      '⚡ <strong>'+P.name+'</strong> — Level '+P.level+', Year '+P.year+'<br>'+
+      '❤️ HP: '+P.hp+'/'+P.maxHp+'&nbsp;&nbsp;&nbsp;💎 MP: '+P.mp+'/'+P.maxMp+'<br>'+
+      '📊 XP: '+P.xp+'/'+P.xpToNext+'&nbsp;&nbsp;&nbsp;💰 '+P.gold+' Galleons<br>'+
+      '✨ '+d.traits;
+    const bl=P.defeatedBosses.length?P.defeatedBosses.map(function(b){return ENEMIES[b]?ENEMIES[b].name:b;}).join(', '):'None yet';
+    const perkList=P.perks.length?P.perks.map(function(k){const pd=PERKS[k];return pd?pd.icon+' '+pd.name:'';}).join(' &nbsp; '):'None yet — challenge NPCs to earn perks!';
+    document.getElementById('dormLog').innerHTML='🏆 Bosses vanquished: '+bl+'<br>⚡ Perks: '+perkList;
+    const sb=document.getElementById('btnStudy');
+    sb.disabled=!!P.studiedToday;
+    sb.textContent=P.studiedToday?'📚 Studied this session':'📚 Study (+XP)';
+    gameState='dorm';isBusy=true;
+  },
+  closeDorm:function(){document.getElementById('dormScr').classList.add('off');gameState='map';isBusy=false;promptZone=null;},
+  dormRest:function(){P.hp=P.maxHp;P.mp=P.maxMp;P.status=[];sfx('heal');spawnParts('#44dd88',20,CW/2,CH/2);toast('Rested in '+HOUSES[P.house].name+' Tower!');updateHUD();saveGame();G.showDorm();},
+  dormStudy:function(){if(P.studiedToday)return;P.studiedToday=true;const xp=30+P.level*5;gainXP(xp);toast('Studied hard! +'+xp+' XP');saveGame();G.showDorm();},
+
+  // ── WIZARD JOURNAL / PAUSE MENU ─────────────────
+  openMenu:function(){
+    if(isBusy&&gameState!=='map')return;
+    isBusy=true;gameState='menu';
+    document.getElementById('pauseScr').classList.remove('off');
+    document.getElementById('npcPrompt').style.display='none';activeNPCChallenge=null;
+    // Portrait
+    const hc=HOUSES[P.house].color;
+    const frame=document.getElementById('menuPortraitFrame');
+    frame.style.border='2px solid '+hc;
+    frame.style.boxShadow='0 0 14px '+hc+'55';
+    drawMenuPortrait();
+    // House badge
+    const hd=HOUSES[P.house];
+    const badge=document.getElementById('menuHouseBadge');
+    badge.textContent=hd.name.toUpperCase();
+    badge.style.background=hc+'22';badge.style.color=hc;badge.style.border='1px solid '+hc+'55';
+    const mascot=document.getElementById('menuHouseMascot');
+    if(mascot){mascot.textContent=hd.animal||'';mascot.style.filter='drop-shadow(0 0 8px '+hc+'99)';}
+    // Name + stats
+    document.getElementById('menuName').textContent=P.name;
+    document.getElementById('menuStats').innerHTML=
+      '⚡ Level '+P.level+' &nbsp;·&nbsp; Year '+P.year+'<br>'+
+      '❤️ '+P.hp+'/'+P.maxHp+' HP &nbsp;·&nbsp; 💎 '+P.mp+'/'+P.maxMp+' MP<br>'+
+      '📊 '+P.xp+'/'+P.xpToNext+' XP &nbsp;·&nbsp; 💰 '+P.gold+' G<br>'+
+      '✨ Spells known: '+P.spells.length+' &nbsp;·&nbsp; Equipped: '+(P.equippedSpells||[]).length;
+    document.getElementById('mHpBar').style.width=Math.max(0,P.hp/P.maxHp*100)+'%';
+    document.getElementById('mMpBar').style.width=Math.max(0,P.mp/P.maxMp*100)+'%';
+    // Perks
+    const perks=P.perks||[];
+    document.getElementById('menuPerks').innerHTML=perks.length?
+      '⚡ <span style="color:var(--gold);letter-spacing:.5px">PERKS:</span> '+perks.map(k=>{const pd=PERKS[k];return pd?'<span style="background:rgba(201,162,39,.1);border:1px solid var(--gold);border-radius:8px;padding:1px 7px;margin-right:3px;font-size:9px">'+pd.icon+' '+pd.name+'</span>':''}).join(''):'<span style="opacity:.5">No perks yet — challenge NPCs to earn them!</span>';
+  },
+  closeMenu:function(){document.getElementById('pauseScr').classList.add('off');gameState='map';isBusy=false;},
+  togglePad:function(){const d=document.getElementById('dpad'),b=document.getElementById('gamebtns'),on=d.style.display==='block';d.style.display=on?'none':'block';b.style.display=on?'none':'block';document.getElementById('padToggleBtn').style.opacity=on?'.5':'1';},
+  toggleMusic:function(){const m=MUS.mute();const btn=document.getElementById('muteBtn');btn.textContent=m?'🔇':'🎵';btn.style.opacity=m?'.5':'1';},
+  saveFromMenu:function(){saveGame();const n=getActiveSlot();toast('💾 Saved to Slot '+n+'!',2000);spawnParts('#c9a227',18,CW/2,CH/2);},
+  openBag:function(){
+    document.getElementById('pauseScr').classList.add('off');
+    document.getElementById('bagScr').classList.remove('off');
+    gameState='bag';renderBagScreen();
+  },
+  closeBag:function(){
+    document.getElementById('bagScr').classList.add('off');
+    document.getElementById('pauseScr').classList.remove('off');
+    gameState='menu';G.openMenu();
+  },
+  useItemFromBag:function(k){
+    const it=ITEMS[k];if(!it||!(P.inventory[k]>0))return;
+    if(it.effect==='hp'){
+      if(P.hp>=P.maxHp){toast('HP is already full!');return;}
+      let h=it.value;
+      if(P.perks.includes('hufflepuff_heal'))h=Math.floor(h*1.3);
+      if(P.perks.includes('brew_master'))h=h*2;
+      P.hp=Math.min(P.maxHp,P.hp+h);sfx('heal');toast(it.icon+' '+it.name+'! +'+h+' HP');
+    }else if(it.effect==='mp'){
+      if(P.mp>=P.maxMp){toast('MP is already full!');return;}
+      P.mp=Math.min(P.maxMp,P.mp+it.value);sfx('heal');toast(it.icon+' '+it.name+'! +'+it.value+' MP');
+    }else if(it.effect==='luck'){
+      if(P.luckyNext){toast('Felix already active!');return;}
+      P.luckyNext=true;sfx('heal');toast('⭐ Felix Felicis! Next spell hits twice as hard!');
+    }else if(it.effect==='dW'){
+      if(P.dW){toast('Chocolate already active!');return;}
+      P.dW=true;sfx('heal');toast('🍫 Chocolate eaten! Dementors will be less effective.');
+    }
+    P.inventory[k]--;
+    updateHUD();saveGame();renderBagScreen();
+  },
+  openLoadout:function(){
+    document.getElementById('pauseScr').classList.add('off');
+    document.getElementById('loadoutScr').classList.remove('off');
+    gameState='loadout';renderLoadout();
+  },
+  closeLoadout:function(){
+    G._swapPending=null;
+    document.getElementById('loadoutScr').classList.add('off');
+    document.getElementById('pauseScr').classList.remove('off');
+    gameState='menu';G.openMenu();
+  },
+  toggleSpell:function(k){
+    const eq=P.equippedSpells||(P.equippedSpells=[]);
+    const isEq=eq.includes(k);
+    if(G._swapPending){
+      if(k===G._swapPending){
+        G._swapPending=null;renderLoadout();toast('Swap cancelled.');return;
+      }
+      if(isEq){
+        const incoming=G._swapPending;
+        eq.splice(eq.indexOf(k),1);eq.push(incoming);
+        G._swapPending=null;saveGame();renderLoadout();
+        toast('⇄ Equipped '+SPELLS[incoming].name+'!');return;
+      }
+      G._swapPending=k;renderLoadout();return;
+    }
+    if(isEq){
+      if(eq.length<=1){toast('Must keep at least 1 spell equipped!');return;}
+      eq.splice(eq.indexOf(k),1);saveGame();renderLoadout();return;
+    }
+    if(eq.length>=6){
+      G._swapPending=k;renderLoadout();
+      toast('Slots full — tap a ✓ ON spell to swap it out',2500);return;
+    }
+    eq.push(k);saveGame();renderLoadout();
+  },
+};
+
+function drawMenuPortrait(){
+  const c=document.getElementById('menuPortrait');if(!c||!P)return;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  // House-tinted background gradient
+  const hc=HOUSES[P.house].color;
+  const g=ctx.createLinearGradient(0,0,0,c.height);
+  g.addColorStop(0,'#050210');g.addColorStop(1,hc+'33');
+  ctx.fillStyle=g;ctx.fillRect(0,0,c.width,c.height);
+  // Subtle ground line
+  ctx.fillStyle=hc+'22';ctx.fillRect(0,c.height-16,c.width,16);
+  ctx.strokeStyle=hc+'55';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(8,c.height-16);ctx.lineTo(c.width-8,c.height-16);ctx.stroke();
+  // Draw wizard centred, slightly scaled up
+  ctx.save();ctx.scale(1.3,1.3);
+  drawWizard(ctx,c.width/2/1.3,(c.height-10)/1.3,'down',0,hc,false,P.gender);
+  ctx.restore();
+}
+
+function renderBagScreen(){
+  const el=document.getElementById('bagGrid');if(!el)return;
+  const entries=Object.entries(P.inventory).filter(function(e){return e[1]>0&&ITEMS[e[0]];});
+  if(!entries.length){
+    el.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:32px 0;font-size:13px;opacity:.4;font-family:\'IM Fell English\',serif;color:var(--muted)">Your bag is empty.</div>';
+    return;
+  }
+  el.innerHTML=entries.map(function(e){
+    const k=e[0],qty=e[1],it=ITEMS[k];
+    let canUse=true,reason='';
+    if(it.effect==='hp'&&P.hp>=P.maxHp){canUse=false;reason='HP full';}
+    if(it.effect==='mp'&&P.mp>=P.maxMp){canUse=false;reason='MP full';}
+    if(it.effect==='luck'&&P.luckyNext){canUse=false;reason='Active';}
+    if(it.effect==='dW'&&P.dW){canUse=false;reason='Active';}
+    return'<div class="sc" style="cursor:default;opacity:'+(canUse?'1':'.6')+'">'+
+      '<div class="sc-icon">'+it.icon+'</div>'+
+      '<div class="sc-name">'+it.name+'</div>'+
+      '<div style="font-size:9px;color:var(--muted);margin:3px 0 5px;line-height:1.4">'+it.desc+'</div>'+
+      '<div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px">×'+qty+'</div>'+
+      '<button class="btn sm" onclick="G.useItemFromBag(\''+k+'\')" '+(canUse?'':'disabled')+
+        ' style="width:100%;font-size:10px;padding:5px 0">'+
+        (canUse?'Use':reason)+'</button>'+
+    '</div>';
+  }).join('');
+}
+
+function renderLoadout(){
+  const eq=P.equippedSpells||(P.equippedSpells=[]);
+  const pending=G._swapPending||null;
+  document.getElementById('eqCount').textContent='('+eq.length+'/6 equipped)';
+  const hint=document.getElementById('swapHint');
+  if(hint)hint.style.display=pending?'block':'none';
+  // Equipped bar
+  const bar=document.getElementById('equippedBar');
+  let slots='';
+  for(let i=0;i<6;i++){
+    const k=eq[i];
+    if(k&&SPELLS[k])slots+='<span class="eq-pill">'+SPELLS[k].icon+' '+SPELLS[k].name+'</span>';
+    else slots+='<span class="eq-pill empty">— empty —</span>';
+  }
+  bar.innerHTML=slots;
+  // Spell cards
+  const grid=document.getElementById('spellLoadoutGrid');
+  grid.innerHTML=P.spells.map(function(k){
+    const s=SPELLS[k];if(!s)return'';
+    const isEq=eq.includes(k);
+    const isPending=pending===k;
+    const isSwapTarget=pending&&isEq;
+    const dmgTxt=s.dmg[1]>0?s.dmg[0]+'–'+s.dmg[1]+' dmg':s.effect==='natureheal'?'restores HP':'support';
+    const houseTag=s.house?('<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:'+HOUSES[s.house].color+';color:#fff;font-weight:bold;display:inline-block;margin-bottom:2px;">'+HOUSES[s.house].name+'</span>'):'';
+    let cls='sc'+(isEq?' eq':'')+(isPending?' swap':'')+(isSwapTarget?' swap-target':'');
+    return'<div class="'+cls+'" onclick="G.toggleSpell(\''+k+'\')" style="touch-action:manipulation">'+
+      (isEq?'<span class="sc-badge">'+(isSwapTarget?'⇄ SWAP':'✓ ON')+'</span>':'')+
+      '<div class="sc-icon">'+s.icon+'</div>'+
+      '<div class="sc-name">'+s.name+'</div>'+
+      (houseTag?'<div style="text-align:center;margin:2px 0">'+houseTag+'</div>':'')+
+      '<div class="sc-cost">'+(s.mana?s.mana+' MP':'Free')+'</div>'+
+      '<div class="sc-dmg">'+dmgTxt+'</div>'+
+    '</div>';
+  }).join('');
+  // Locked spells: available for this house but not yet learned, sorted by min level
+  const locked=Object.entries(SPELLS).filter(function(e){
+    return!P.spells.includes(e[0])&&(!e[1].house||e[1].house===P.house);
+  }).sort(function(a,b){return(a[1].ml||1)-(b[1].ml||1);});
+  const ldiv=document.getElementById('lockedDivider');
+  const lgrid=document.getElementById('spellLockedGrid');
+  if(ldiv)ldiv.style.display=locked.length?'':'none';
+  if(lgrid)lgrid.innerHTML=locked.map(function(e){
+    const k=e[0],s=e[1];
+    const dmgTxt=s.dmg[1]>0?s.dmg[0]+'–'+s.dmg[1]+' dmg':s.effect==='natureheal'?'restores HP':'support';
+    return'<div class="sc" style="opacity:.38;cursor:default;pointer-events:none;filter:grayscale(.6)">'+
+      '<span class="sc-badge" style="background:#1a1a2e;color:#6655aa;border:1px solid #3322aa">🔒 Lv '+s.ml+'</span>'+
+      '<div class="sc-icon">'+s.icon+'</div>'+
+      '<div class="sc-name">'+s.name+'</div>'+
+      '<div class="sc-cost">'+(s.mana?s.mana+' MP':'Free')+'</div>'+
+      '<div class="sc-dmg">'+dmgTxt+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+// ── WORLD INIT ────────────────────────────────────
+function initWorld(){
+  buildMap();
+  prerenderMap();
+  buildMinimap();
+  camX=P.wx-CW/2;camY=P.wy-CH/2;tCX=camX;tCY=camY;
+  initNPCs();
+  enterMap();
+}
+
+// ── MAIN LOOP ─────────────────────────────────────
+function loop(now){
+  requestAnimationFrame(loop);
+  if(gameState!=='map'||!MAP||!P)return;
+
+  let dx=0,dy=0;
+  if(keys['ArrowLeft']||keys['a']||keys['A'])dx=-1;
+  if(keys['ArrowRight']||keys['d']||keys['D'])dx=1;
+  if(keys['ArrowUp']||keys['w']||keys['W'])dy=-1;
+  if(keys['ArrowDown']||keys['s']||keys['S'])dy=1;
+  if(dx!==0&&dy!==0){dx*=.707;dy*=.707;}
+
+  const moving=dx!==0||dy!==0;
+  if(moving&&!isBusy){
+    if(dx<0)P.dir='left';else if(dx>0)P.dir='right';
+    else if(dy<0)P.dir='up';else P.dir='down';
+    tryMove(dx,dy);walkFrame+=.15;
+    if(now-lastStep>340){sfx('step');lastStep=now;}
+  } else walkFrame=0;
+
+  checkZones();
+
+  tCX=Math.max(0,Math.min(MW*TS-CW,P.wx-CW/2));
+  tCY=Math.max(0,Math.min(MH*TS-CH,P.wy-CH/2));
+  camX+=(tCX-camX)*.10;camY+=(tCY-camY)*.10;
+
+  // Render
+  wctx.clearRect(0,0,CW,CH);
+  wctx.drawImage(mapOff,-Math.round(camX),-Math.round(camY));
+  drawAnimated(now);
+  drawBeacons(now);
+
+  // NPCs
+  updateNPCs(now);drawNPCs(now);
+
+  // Player shadow + sprite
+  const px=Math.round(P.wx-camX),py=Math.round(P.wy-camY);
+  drawWizard(wctx,px,py,P.dir,walkFrame,HOUSES[P.house].color,false,P.gender);
+
+  updateParts();drawParts();
+  drawDayNight(now);
+  drawMinimap();
+}
+
+// ── DAY / NIGHT CYCLE ────────────────────────────
+let gameTime=0.33,lastDNTime=0; // 0.33 ≈ 8 AM; full cycle = 8 real minutes
+const STARS=(()=>{const a=[];for(let i=0;i<90;i++)a.push({x:Math.random(),y:Math.random(),r:.4+Math.random()*1.4,b:Math.random()});return a;})();
+
+function drawDayNight(now){
+  // Advance game time (cap delta at 500ms to handle pauses/battles gracefully)
+  const dt=lastDNTime?Math.min(now-lastDNTime,500):0;
+  lastDNTime=now;
+  gameTime=(gameTime+dt/480000)%1;
+  const t=gameTime;
+
+  // Darkness: 0 = bright noon, 0.65 = full night
+  let dark=0;
+  if(t<0.20)      dark=0.65;
+  else if(t<0.27) dark=0.65*(1-(t-0.20)/0.07);
+  else if(t<0.70) dark=0;
+  else if(t<0.80) dark=0.65*(t-0.70)/0.10;
+  else            dark=0.65;
+
+  // Warm orange tint at dawn (t≈0.23) and dusk (t≈0.73)
+  let warm=0;
+  if(t>0.18&&t<0.32)      warm=0.26*Math.sin(Math.PI*(t-0.18)/0.14);
+  else if(t>0.65&&t<0.82) warm=0.28*Math.sin(Math.PI*(t-0.65)/0.17);
+
+  wctx.save();
+
+  // Dawn / dusk warm glow
+  if(warm>0.01){wctx.fillStyle='rgba(210,75,10,'+warm.toFixed(3)+')';wctx.fillRect(0,0,CW,CH);}
+
+  // Night darkness overlay
+  if(dark>0.01){wctx.fillStyle='rgba(0,5,42,'+dark.toFixed(3)+')';wctx.fillRect(0,0,CW,CH);}
+
+  // Stars — appear as night deepens
+  if(dark>0.05){
+    const sa=Math.min(1,(dark-0.05)/0.28)*0.9;
+    STARS.forEach(s=>{
+      const twinkle=0.45+0.55*Math.sin(now*0.0009*(1+s.b*2.5)+s.x*83);
+      wctx.globalAlpha=sa*twinkle;
+      wctx.fillStyle='#f8f6ff';
+      wctx.beginPath();wctx.arc(s.x*CW,s.y*CH,s.r,0,6.28);wctx.fill();
+    });
+    wctx.globalAlpha=1;
+
+    // Moon (crescent)
+    const mx=CW*0.80,my=52;
+    wctx.globalAlpha=Math.min(1,sa*1.2);
+    wctx.shadowColor='#c8d8ff';wctx.shadowBlur=22;
+    wctx.fillStyle='#eef2ff';
+    wctx.beginPath();wctx.arc(mx,my,14,0,6.28);wctx.fill();
+    wctx.fillStyle='rgba(0,5,42,0.80)';wctx.shadowBlur=0; // crescent bite
+    wctx.beginPath();wctx.arc(mx-5,my,12,0,6.28);wctx.fill();
+    wctx.globalAlpha=1;
+  }
+
+  // Sun — arcs left→right during daytime
+  if(t>0.19&&t<0.81&&dark<0.60){
+    const sunVis=Math.min(1,(0.60-dark)/0.60);
+    const sunT=Math.max(0,Math.min(1,(t-0.22)/0.56));
+    const sx=CW*(0.07+sunT*0.86);
+    const sy=68-Math.sin(Math.PI*sunT)*40; // low at edges, high at noon
+    wctx.globalAlpha=sunVis*0.92;
+    wctx.shadowColor='#ffdd22';wctx.shadowBlur=32;
+    wctx.fillStyle='#ffe840';
+    wctx.beginPath();wctx.arc(sx,sy,11,0,6.28);wctx.fill();
+    // Corona rays
+    wctx.strokeStyle='rgba(255,230,40,0.35)';wctx.lineWidth=1;
+    for(let a=0;a<8;a++){const ang=a*Math.PI/4;wctx.beginPath();wctx.moveTo(sx+Math.cos(ang)*14,sy+Math.sin(ang)*14);wctx.lineTo(sx+Math.cos(ang)*20,sy+Math.sin(ang)*20);wctx.stroke();}
+    wctx.shadowBlur=0;wctx.globalAlpha=1;
+  }
+
+  wctx.restore();
+
+  // HUD clock
+  const hh=Math.floor(t*24),mm=Math.floor((t*24-hh)*60);
+  const icon=dark>0.35?'🌙':warm>0.10?'🌅':'☀️';
+  const h12=hh%12||12,ap=hh<12?'AM':'PM';
+  const el=document.getElementById('htime');
+  if(el)el.textContent=icon+' '+h12+':'+(mm<10?'0':'')+mm+ap;
+}
+
+// ── NPCs ──────────────────────────────────────────
+const HOUSE_NPCS={
+  g:[
+   {name:'Harry Potter',icon:'🧙‍♂️',color:'#ee4444',home:{x:36,y:22},wanderR:4,
+    gifts:['butterbeer','chocolate','wiggenweld'],
+    dialogue:['I solemnly swear I am up to no good.','Expelliarmus — it always works.','We could use some Chocolate Frogs right now.','Fancy a trip on my Firebolt?','There\'s something strange about this year, I can feel it.','Dumbledore trusts me. That has to count for something.','The Marauder\'s Map never lies.','I didn\'t ask to be famous, you know.'],
+    mid:['The Chamber is open. Watch yourself down there.','Sirius is innocent — I\'d stake my life on it.','The Triwizard Tournament is far more dangerous than they\'re letting on.','Cedric was a good person. Don\'t let them forget him.','I keep hearing Voldemort\'s name in my head.'],
+    high:['The Order of the Phoenix needs us. All of us.','He\'s back. I\'ve seen it with my own eyes.','The prophecy says neither of us can live while the other survives.','Dumbledore\'s Army — we never disbanded, not really.','Horcruxes. We have to find every last one.'],
+    end:['It all ends tonight. No more running.','Neither can live while the other survives.','I\'m going to walk into the forest. But I\'m coming back.'],
+    challenges:[
+      {ml:4, story:'Harry squares up, wand raised. "Show me what you\'ve got!"',reward:'seeker_dodge',rName:"Seeker's Reflexes",rDesc:'15% chance to dodge enemy attacks'},
+      {ml:11,story:'"Year 4 Harry" — faster, sharper, fiercer. Brace yourself.',reward:'chosen_ward',rName:'Phoenix Ward',rDesc:'Survive one fatal blow per battle at 1 HP'},
+      {ml:19,story:'The Chosen One fights with everything he has!',reward:'elder_power',rName:'Elder Wand Mastery',rDesc:'+25% damage on all spells'}
+    ]},
+   {name:'Hermione Granger',icon:'🧙‍♀️',color:'#ee4444',home:{x:38,y:21},wanderR:3,
+    gifts:['mana_potion','wiggenweld'],
+    dialogue:['When in doubt, go to the library.','It\'s leviOsa, not levioSA.','Rules exist for a reason, you know.','I\'ve read about this in Magical Drafts and Potions.','Swot? I prefer "well-prepared."','Books and cleverness — but also friendship.'],
+    mid:['Dumbledore\'s Army was partially my idea too, you know.','I\'ve been studying Animagi for months. Don\'t ask why.','The Time-Turner only moves you back, never forward — I learned that the hard way.'],
+    high:['We can\'t trust anyone in the Ministry. Anyone.','Horcruxes can only be destroyed by a handful of methods — I\'ve made a list.','I\'ve been packing supplies for months. Just in case.'],
+    end:['We\'re hunting the last Horcruxes. Stay sharp.','Everything I\'ve read leads to one conclusion. It has to be you, Harry.']},
+   {name:'Ron Weasley',icon:'🧙‍♂️',color:'#ee4444',home:{x:34,y:24},wanderR:4,
+    gifts:['butterbeer','chocolate'],
+    dialogue:['Bloody hell!','Chess is my specialty, not that it helps much here.','Have a Chocolate Frog?','Mum packed us enough sandwiches to last a week.','Why spiders? Why couldn\'t it be butterflies?','Being the youngest brother is... educational.'],
+    mid:['Spiders. Why did it have to be spiders.','We should\'ve taken the Floo Network.','Fred and George would laugh at this. I choose not to.'],
+    high:['Hermione worries too much. I worry exactly the right amount.','We destroyed a Horcrux. That\'s worth at least a Butterbeer.'],
+    end:['I\'m with you, Harry. Right to the end.','Go on — you can do this. I\'ll hold them off.']}
+  ],
+  s:[
+   {name:'Draco Malfoy',icon:'🧙‍♂️',color:'#44cc88',home:{x:36,y:22},wanderR:4,
+    gifts:['wiggenweld','mana_potion'],
+    dialogue:['My father will hear about this.','Slytherins always come out on top.','You\'ll regret crossing me.','Don\'t talk to me like I\'m some common student.','You think you\'re so special.','Not everything is about Potter, you know.'],
+    mid:['I was given this task because I can be trusted. Don\'t forget that.','The Dark Lord\'s plans require more precision than you could manage.','I don\'t need anyone\'s help. Especially not yours.'],
+    high:['I don\'t have a choice. Do you understand that? No choice at all.','If I fail...I can\'t think about that.','Sometimes I wonder if Father was wrong about... everything.'],
+    end:['I can\'t... I can\'t kill Dumbledore.','Was it always going to end like this for me?','Maybe being a Malfoy isn\'t what I thought it was.'],
+    challenges:[
+      {ml:4, story:'Draco sneers and raises his wand. "Let\'s see what you\'re made of."',reward:'slytherin_crit',rName:'Slytherin Cunning',rDesc:'+15% critical hit chance'},
+      {ml:11,story:'Draco fights with cold, precise Slytherin discipline.',reward:'cold_blood',rName:'Pureblood Composure',rDesc:'+10 defense permanently'},
+      {ml:19,story:'Draco fights with the desperation of someone with everything to lose!',reward:'dark_mastery',rName:'Dark Arts Training',rDesc:'+30% damage with dark spells'}
+    ]},
+   {name:'Pansy Parkinson',icon:'🧙‍♀️',color:'#44cc88',home:{x:38,y:21},wanderR:3,
+    gifts:['wiggenweld'],
+    dialogue:['Cunning beats brute force every time.','Green suits you — admit it.','Don\'t get caught. Rule number one.','Power is the only currency that matters.','Weakness is the only true failure.','Keep your enemies close. Closer than your friends.'],
+    mid:['Draco\'s been acting strange lately. Not that I\'d tell you.','The Dark Lord\'s supporters are everywhere. Even here.'],
+    high:['There are lines I won\'t cross. Even for Slytherin.','Power means nothing if you lose yourself getting it.'],
+    end:['Take him! Take Potter! It\'s the only way to — ...maybe I was wrong.']},
+   {name:'Blaise Zabini',icon:'🧙‍♂️',color:'#44cc88',home:{x:34,y:24},wanderR:4,
+    gifts:['mana_potion'],
+    dialogue:['Ambition is everything.','Play it cool, always — it\'s the Slytherin way.','Power goes to those who take it, not wait for it.','I only trust myself. Proven strategy.','Observe more, talk less. It\'s how I survive.'],
+    mid:['Draco\'s been given something dangerous. I can tell.','Stay out of Slytherin politics if you value your health.'],
+    high:['The Carrows are brutal. Even we know better than to provoke them.','I pick my battles wisely. You should learn to do the same.'],
+    end:['Zabinis survive. It\'s what we\'ve always done.']}
+  ],
+  r:[
+   {name:'Luna Lovegood',icon:'🧙‍♀️',color:'#4488ee',home:{x:36,y:22},wanderR:5,
+    gifts:['chocolate','mana_potion','butterbeer'],
+    dialogue:['Have you seen any Nargles lately?','The things we lose have a way of finding their way back.','The Wrackspurts are particularly thick today.','Most people can\'t see Thestrals. I\'ve always been able to.','I believe in things other people dismiss too quickly.','Radishes are surprisingly effective against dark creatures, you know.'],
+    mid:['Daddy says the Quibbler will expose the Ministry soon.','The Rotfang Conspiracy is real. I have documents.','I hear them whispering in the walls sometimes. It\'s quite comforting.'],
+    high:['We all lost something. But we\'re still here, aren\'t we?','They took me to the dungeons. But they couldn\'t take my mind.','I painted my friends on my bedroom ceiling so they\'re always with me.'],
+    end:['Voldemort\'s magic is strong. But love is stronger. Even Nargles know that.','We\'re all just people trying to find our way home, in the end.'],
+    challenges:[
+      {ml:4, story:'Luna tilts her head. "Shall we practice? The Wrackspurts say yes."',reward:'luna_xp',rName:"Nargles' Gift",rDesc:'+20% experience from all sources'},
+      {ml:11,story:'Luna fights with unexpected clarity — she sees through every defence.',reward:'mana_flow',rName:'Unbounded Magic',rDesc:'-15% mana cost on all spells'},
+      {ml:19,story:'Luna channels something ancient and serene. And utterly terrifying.',reward:'true_sight',rName:'Spectrespecs',rDesc:"Reduces enemy defense by 25%"}
+    ]},
+   {name:'Cho Chang',icon:'🧙‍♀️',color:'#4488ee',home:{x:38,y:21},wanderR:3,
+    gifts:['mana_potion','wiggenweld'],
+    dialogue:['Wit beyond measure is man\'s greatest treasure.','Study hard and the answers come.','Never stop asking questions — that\'s the Ravenclaw way.','Cedric would have wanted us to keep going. All of us.','Flying free is the closest thing to magic I know.'],
+    mid:['Being in the DA was right, even when it was hard.','I didn\'t betray anyone on purpose. I need you to know that.'],
+    high:['Grief is heavy. But it makes you fight harder for what matters.','Fight for those you\'ve lost. That\'s how you honour them.'],
+    end:['This is the battle we\'ve been training for all along.']},
+   {name:'Padma Patil',icon:'🧙‍♀️',color:'#4488ee',home:{x:34,y:24},wanderR:4,
+    gifts:['mana_potion'],
+    dialogue:['Ravenclaws think before acting.','Knowledge is the best armour money can\'t buy.','Done tonight\'s reading yet?','Don\'t underestimate a Ravenclaw in a fight.','Parvati\'s braver in combat. I\'m the strategist.'],
+    mid:['The Yule Ball was... deeply educational in unexpected ways.','DA training helped more than any formal class.'],
+    high:['Parvati\'s fighting too. I can\'t be less brave than my sister.'],
+    end:['For everyone we lost. We finish this together.']}
+  ],
+  h:[
+   {name:'Cedric Diggory',icon:'🧙‍♂️',color:'#ddaa22',home:{x:36,y:22},wanderR:4,
+    gifts:['wiggenweld','mandrake'],
+    dialogue:['Play fair and win fairly — that\'s the only way.','Hard work always pays off in the end.','Take the trophy — but take it together.','Hufflepuffs are great finders. Never underestimate us.','I don\'t want glory. I want to do what\'s right.','A good opponent makes you better. Welcome the challenge.'],
+    mid:['The second task nearly drowned me. Nearly.','I trust the other champions. Mostly.','The prize isn\'t worth much if you lose yourself getting it.'],
+    high:['This maze isn\'t really testing our magic, is it?','Something feels very wrong about the cup. Very wrong.'],
+    end:['Harry... take my body back to my parents, won\'t you?','Don\'t let them win. Promise me.'],
+    challenges:[
+      {ml:4, story:'"A fair duel, no tricks." Cedric extends his hand first — then raises his wand.',reward:'hufflepuff_heal',rName:'Loyal Heart',rDesc:'Healing potions +30% effectiveness'},
+      {ml:11,story:'Cedric fights with Triwizard Champion precision. Respect it.',reward:'iron_will',rName:"Badger's Resolve",rDesc:'+30 maximum HP permanently'},
+      {ml:19,story:'Cedric gives everything — a duel worthy of a Champion.',reward:'regen_spirit',rName:'True Loyalty',rDesc:'Regain 8 HP/turn when below 30% HP'}
+    ]},
+   {name:'Neville Longbottom',icon:'🧙‍♂️',color:'#ddaa22',home:{x:38,y:21},wanderR:3,
+    gifts:['mandrake','wiggenweld'],
+    dialogue:['I\'m worth twelve of you, so watch yourself!','Herbology saved my life. No, literally.','Courage isn\'t just for Gryffindors.','Gran thinks I\'m not brave. She\'s wrong.','Dumbledore\'s Army is still my proudest moment.','People underestimate me. I\'ve stopped caring.'],
+    mid:['Longbottom\'s not just a herbologist — I can fight.','I faced my Boggart. It was Professor Snape. Twice.','The Room of Requirement showed me who I really am.'],
+    high:['We held the DA together while Harry was gone. We managed.','The Carrows were monsters. I fought back every single time.','Pull the sword from the hat if you have to. It works.'],
+    end:['Voldemort! I\'ll join you when hell freezes over!','The sword of Gryffindor — it\'s right here!']},
+   {name:'Hannah Abbott',icon:'🧙‍♀️',color:'#ddaa22',home:{x:34,y:24},wanderR:4,
+    gifts:['butterbeer'],
+    dialogue:['Loyalty is worth more than talent, any day.','Everyone is welcome here. That\'s the Hufflepuff way.','A kind word costs nothing and means everything.','Hufflepuff doesn\'t get enough credit. We notice.','Hard work isn\'t glamorous, but it wins eventually.'],
+    mid:['Mother died. I had to come back anyway. For them.','Kindness is its own form of strength — don\'t let anyone tell you otherwise.'],
+    high:['We defended the school. Not just Gryffindors. All of us.'],
+    end:['We never stopped fighting. We just waited for exactly the right moment.']}
+  ]
+};
+const TEACHER_NPCS=[
+  {name:'Dumbledore',icon:'🧙',color:'#9966ff',home:{x:36,y:20},wanderR:2,
+   gifts:['felix','mana_potion'],
+   dialogue:['It is our choices that show what we truly are.','Happiness can be found even in the darkest of times.','Words are our most inexhaustible source of magic.','It does not do to dwell on dreams and forget to live.','Help will always be given at Hogwarts to those who ask for it.','To the well-organised mind, death is but the next great adventure.'],
+   mid:['The truth is a beautiful and terrible thing, and should be treated with great caution.','It takes a great deal of bravery to stand up to our enemies, but a great deal more to stand up to our friends.'],
+   high:['Perhaps those best suited to power are those who have never sought it.','Do not pity the dead, Harry. Pity the living — those who live without love.'],
+   end:['You are the true master of death, because the true master does not seek to run away from it.','Of course it is happening inside your head — but why on earth should that mean it is not real?']},
+  {name:'Prof. Snape',icon:'🧙‍♂️',color:'#445566',home:{x:36,y:13},wanderR:3,
+   gifts:['mana_potion','wiggenweld','mandrake'],
+   dialogue:['There will be no foolish wand-waving here.','Turn to page three hundred and ninety-four.','I can teach you to bewitch the mind and ensnare the senses.','Obviously.','Fame clearly isn\'t everything.','Do try not to embarrass the school.'],
+   mid:['I have been Dumbledore\'s spy through and through. Remember that.','Occlumency is not simply clearing your mind. It is mastering it completely.','The Dark Arts are ever-shifting, ever-hungry. Fickle. Like a living thing.'],
+   high:['I am the Half-Blood Prince.','You dare use my own spells against me?','You have your mother\'s eyes.'],
+   end:['Look at me... you have your mother\'s eyes.','Always.','Tell them what I was. What I really was.'],
+   challenges:[
+     {ml:5, story:'"Wand at the ready. Let us see if you have been paying attention."',reward:'brew_master',rName:"Snape's Expertise",rDesc:'Potions restore double the HP'},
+     {ml:13,story:'Snape fights with Half-Blood Prince precision — every spell calculated.',reward:'mana_flow',rName:'Mind Over Magic',rDesc:'-15% mana cost on all spells'},
+     {ml:21,story:'The Half-Blood Prince holds nothing back. Survive this.',reward:'dark_mastery',rName:'Dark Arts Mastery',rDesc:'+30% damage with dark spells'}
+   ]},
+  {name:'Hagrid',icon:'🧔',color:'#8b6533',home:{x:17,y:30},wanderR:3,
+   gifts:['butterbeer','mandrake'],
+   dialogue:['Yer a wizard!','I shouldn\'t have said that. Forget I said that.','What\'s comin\' will come, an\' we\'ll meet it when it does.','I am what I am, an\' I\'m not ashamed.','You\'re a great witch or wizard, you know that?','There\'s no monster born tha\' can\'t be handled with the right care.'],
+   mid:['Buckbeak didn\'t mean anythin\' by it. He was just feelin\' proud.','Dragons are seriously dangerous. I cannot stress that enough.','The Forbidden Forest isn\'t forbidden for nothin\', mind.'],
+   high:['They took me wand. But they never really took me magic.','Aragog\'s gone. Made me cry, it did, even knowin\' what he was.','I shouldn\'t\'ve told yeh that. But it\'s done now.'],
+   end:['Carry yeh? Course I can. Off we go then, Harry.','You\'ll be alright. You always are.']},
+  {name:'Prof. McGonagall',icon:'🧙‍♀️',color:'#228822',home:{x:33,y:21},wanderR:2,
+   gifts:['wiggenweld','mana_potion'],
+   dialogue:['Transfiguration is some of the most complex magic you will learn.','Five points from your house!','Have a biscuit.','I have never set a foot wrong in 39 years at this school.','I shall not be threatened in my own classroom!','Every student here has the right to be taught properly.'],
+   mid:['It matters not what someone is born, but what they grow to be.','I am NOT an owl.','Kindly tell me what you think you are doing.'],
+   high:['I will not permit this school to be used for the torture of students.','Every last person in here fought bravely tonight.','Hogwarts is threatened. Those of age who wish to fight may stay.'],
+   end:['We teachers are rather good at magic, you know.','I\'ve always wanted to use that spell. Piertotum Locomotor!'],
+   challenges:[
+     {ml:6, story:'"Demonstrate what you have learned. I do not accept excuses."',reward:'iron_will',rName:'Disciplined Body',rDesc:'+30 maximum HP permanently'},
+     {ml:14,story:'McGonagall fights with decades of hard-won experience. Respect it.',reward:'seeker_dodge',rName:'Animagi Instinct',rDesc:'15% chance to dodge enemy attacks'},
+     {ml:22,story:'McGonagall channels the full fury of Hogwarts itself. Hold on!',reward:'elder_power',rName:'Headmistress Power',rDesc:'+20% damage on all spells'}
+   ]},
+  {name:'Mad-Eye Moody',icon:'🧙‍♂️',color:'#885522',home:{x:60,y:36},wanderR:4,
+   gifts:['felix','wiggenweld'],
+   dialogue:['CONSTANT VIGILANCE!','The Dark Arts are many, ever-shifting, impossible to predict.','Never let your guard down. Not for one second.','I have been an Auror for decades. Decades.','These scars? Every one means I survived.','Trust no one without verifying. No one.'],
+   mid:['An Auror\'s greatest enemy is complacency. Don\'t let it happen to you.','Know your enemy before they know you exist.','A real wizard doesn\'t rely on just one spell.'],
+   high:['There\'s a whole world of dark magic you haven\'t seen yet.','I\'ve survived things that would make your hair turn white overnight.','The good guys don\'t always win. But they keep fighting anyway.'],
+   end:['Trust nobody. CONSTANT. VIGILANCE.','The good guys don\'t always win. That\'s exactly why we fight.'],
+   challenges:[
+     {ml:7, story:'"Auror training starts NOW. Don\'t embarrass me."',reward:'auror_sight',rName:'Auror Training',rDesc:'-20% damage taken from boss enemies'},
+     {ml:15,story:'Moody fights with every Auror trick in his considerable arsenal.',reward:'chosen_ward',rName:"Auror's Last Stand",rDesc:'Survive one fatal blow per battle at 1 HP'},
+     {ml:23,story:'"You want to face dark wizards? Survive THIS first."',reward:'transfig_art',rName:"Auror's Edge",rDesc:'+30% attack stat permanently'}
+   ]}
+];
+const PERKS={
+  seeker_dodge:   {name:"Seeker's Reflexes",  icon:'⚡',desc:'15% chance to dodge any attack'},
+  chosen_ward:    {name:'Phoenix Ward',        icon:'🔥',desc:'Survive one fatal blow per battle at 1 HP'},
+  elder_power:    {name:'Elder Wand Mastery',  icon:'✨',desc:'+25% spell damage'},
+  slytherin_crit: {name:'Slytherin Cunning',   icon:'🐍',desc:'+15% critical hit chance'},
+  cold_blood:     {name:'Cold Composure',      icon:'🧊',desc:'+10 defense permanently'},
+  dark_mastery:   {name:'Dark Arts Training',  icon:'⚫',desc:'+30% damage with dark spells'},
+  luna_xp:        {name:"Nargles' Gift",       icon:'🌙',desc:'+20% experience from all sources'},
+  mana_flow:      {name:'Unbounded Magic',     icon:'💎',desc:'-15% mana cost on all spells'},
+  true_sight:     {name:'Spectrespecs',        icon:'👁️',desc:'Enemy defense reduced 25%'},
+  hufflepuff_heal:{name:'Loyal Heart',         icon:'🦡',desc:'Healing potions +30% more effective'},
+  iron_will:      {name:'Iron Will',           icon:'🛡️',desc:'+30 maximum HP permanently'},
+  regen_spirit:   {name:'Regen Spirit',        icon:'💚',desc:'Regain 8 HP/turn when below 30% HP'},
+  brew_master:    {name:'Brew Master',         icon:'🧪',desc:'Potions restore double HP'},
+  auror_sight:    {name:'Auror Training',      icon:'🔍',desc:'-20% damage from boss enemies'},
+  transfig_art:   {name:'Transfig. Art',       icon:'🎯',desc:'+30% attack stat permanently'}
+};
+let activeNPCs=[],lastNPCTime=0;
+const npcCooldowns={};
+let activeNPCChallenge=null,currentNPCChallenge=null;
+function initNPCs(){
+  if(!P)return;
+  const c=(HOUSE_NPCS[P.house]||[]).map(n=>({...n,x:n.home.x,y:n.home.y,wt:0}));
+  const t=TEACHER_NPCS.map(n=>({...n,x:n.home.x,y:n.home.y,wt:0}));
+  activeNPCs=[...c,...t];
+}
+function updateNPCs(now){
+  if(!MAP||!activeNPCs.length||now-lastNPCTime<90)return;
+  lastNPCTime=now;
+  activeNPCs.forEach(npc=>{
+    if(--npc.wt>0||Math.random()<.5)return;
+    npc.wt=30+Math.floor(Math.random()*80);
+    const ds=[[.5,0],[-.5,0],[0,.5],[0,-.5]];
+    const d=ds[Math.floor(Math.random()*ds.length)];
+    const nx=npc.x+d[0],ny=npc.y+d[1];
+    const hx=nx-npc.home.x,hy=ny-npc.home.y;
+    if(hx*hx+hy*hy>npc.wanderR*npc.wanderR)return;
+    const tx2=Math.floor(nx),ty2=Math.floor(ny);
+    if(MAP[ty2]&&WALK.has(MAP[ty2][tx2])){npc.x=nx;npc.y=ny;}
+  });
+}
+function drawNPCs(now){
+  if(!activeNPCs.length)return;
+  wctx.textAlign='center';
+  let challengeVisible=false;
+  activeNPCs.forEach((npc,i)=>{
+    const sx=npc.x*TS-camX,sy=npc.y*TS-camY;
+    if(sx<-60||sx>CW+60||sy<-70||sy>CH+20)return;
+    wctx.globalAlpha=.25;wctx.fillStyle='#000';
+    wctx.beginPath();wctx.ellipse(sx,sy+2,8,3,0,0,6.28);wctx.fill();
+    wctx.globalAlpha=1;
+    wctx.font='22px serif';wctx.fillText(npc.icon,sx,sy-4);
+    wctx.font='bold 8px serif';wctx.fillStyle=npc.color||'#c9a227';
+    wctx.fillText(npc.name,sx,sy+14);
+    const dx2=P.wx/TS-npc.x,dy2=P.wy/TS-npc.y;
+    const dist=Math.sqrt(dx2*dx2+dy2*dy2);
+    if(dist<2.5){
+      // Dialogue on approach cooldown
+      if(now-(npcCooldowns[i]||0)>8000){
+        npcCooldowns[i]=now;
+        const pool=[...(npc.dialogue||[])];
+        if(P.level>=5)pool.push(...(npc.mid||[]));
+        if(P.level>=12)pool.push(...(npc.high||[]));
+        if(P.level>=20)pool.push(...(npc.end||[]));
+        const line=pool[Math.floor(Math.random()*pool.length)]||'...';
+        toast(npc.name+':“'+line+'”',4000);
+        // Random gift (8% chance, 3-min cooldown per NPC)
+        if(npc.gifts&&Math.random()<.08&&!npc._giftCD){
+          npc._giftCD=true;
+          setTimeout(()=>{
+            const gift=npc.gifts[Math.floor(Math.random()*npc.gifts.length)];
+            P.inventory[gift]=(P.inventory[gift]||0)+1;
+            toast('🎁 '+npc.name+' gave you a '+ITEMS[gift].name+'!',3500);
+            updateHUD();saveGame();
+            setTimeout(()=>{npc._giftCD=false;},180000);
+          },4500);
+        }
+      }
+      // Challenge prompt (shown when eligible, hides on walk-away)
+      if(gameState==='map'&&npc.challenges){
+        const prog=P.npcProgress[npc.name]||{wins:0};
+        const tIdx=Math.min(prog.wins,npc.challenges.length-1);
+        if(P.level>=npc.challenges[tIdx].ml){
+          challengeVisible=true;
+          if(activeNPCChallenge!==npc)showNPCPrompt(npc);
+        }
+      }
+    }
+  });
+  if(!challengeVisible&&activeNPCChallenge){
+    document.getElementById('npcPrompt').style.display='none';
+    activeNPCChallenge=null;
+  }
+  wctx.textAlign='left';
+}
+
+function showNPCPrompt(npc){
+  if(!npc.challenges)return;
+  activeNPCChallenge=npc;
+  const prog=P.npcProgress[npc.name]||{wins:0};
+  const tIdx=Math.min(prog.wins,npc.challenges.length-1);
+  const ch=npc.challenges[tIdx];
+  const isRematch=prog.wins>=npc.challenges.length;
+  document.getElementById('npcPIcon').textContent=npc.icon;
+  document.getElementById('npcPName').textContent=npc.name;
+  document.getElementById('npcPMsg').textContent=isRematch?
+    'Rematch #'+(prog.wins-npc.challenges.length+1)+' — they\'re stronger than before!':
+    (ch.story||npc.name+' wants to duel!');
+  document.getElementById('npcPReward').textContent=isRematch?
+    '⚔️ Earn bonus XP & Galleons':
+    '🏆 Win to learn: '+ch.rName+' — '+ch.rDesc;
+  document.getElementById('npcPrompt').style.display='block';
+}
+
+function startNPCBattle(npc){
+  if(!npc||!npc.challenges)return;
+  const prog=P.npcProgress[npc.name]||{wins:0};
+  const tIdx=Math.min(prog.wins,npc.challenges.length-1);
+  const ch=npc.challenges[tIdx];
+  const isRematch=prog.wins>=npc.challenges.length;
+  const rematchN=isRematch?prog.wins-npc.challenges.length+1:0;
+  const tierM=[[1.0,1.0,0.7],[1.8,1.6,1.1],[2.8,2.4,1.6]][Math.min(tIdx,2)];
+  const rm=Math.pow(1.25,rematchN);
+  const atks=[['dark_curse','crucio'],['dark_curse','crucio','dark_wave'],['dark_wave','crucio','avada']];
+  ENEMIES['_npc']={
+    name:npc.name,icon:npc.icon,
+    hp:Math.max(30,Math.floor(P.maxHp*tierM[0]*rm)),
+    atk:Math.max(8,Math.floor(P.atk*tierM[1]*rm)),
+    def:Math.max(2,Math.floor(P.def*tierM[2]*rm)),
+    xp:Math.floor(70*(tIdx+1)*rm),gold:Math.floor(25*(tIdx+1)*rm),
+    atks:atks[Math.min(tIdx,2)],story:ch.story||npc.name+' challenges you!',
+    color:npc.color,boss:true,status:[],atkDeb:0
+  };
+  currentNPCChallenge={npc,tIdx,isRematch};
+  document.getElementById('npcPrompt').style.display='none';
+  activeNPCChallenge=null;
+  startBattle('_npc');
+}
+
+function handleNPCChallengeWin(cc){
+  const{npc,tIdx,isRematch}=cc;
+  currentNPCChallenge=null;
+  if(!P.npcProgress[npc.name])P.npcProgress[npc.name]={wins:0};
+  P.npcProgress[npc.name].wins=(P.npcProgress[npc.name].wins||0)+1;
+  if(!isRematch){
+    const ch=npc.challenges[tIdx];
+    if(ch&&ch.reward&&!P.perks.includes(ch.reward)){
+      P.perks.push(ch.reward);
+      if(ch.reward==='iron_will'){P.maxHp+=30;P.hp=Math.min(P.maxHp,P.hp+15);}
+      if(ch.reward==='cold_blood'){P.def+=10;}
+      if(ch.reward==='transfig_art'){P.atk=Math.floor(P.atk*1.3);}
+      setTimeout(()=>toast('🏆 New perk: '+ch.rName+'!\n'+ch.rDesc,5500),1600);
+    } else {
+      setTimeout(()=>toast('💪 Victory! They\'ll be tougher next time.',3000),1600);
+    }
+  } else {
+    setTimeout(()=>toast('💪 Rematch won! They\'ll grow stronger again...',3000),1600);
+  }
+  saveGame();
+}
+
+// ── SPELL PRACTICE MINI-GAME ──────────────────────
+const SP={
+  canvas:null,ctx:null,running:false,raf:null,
+  W:0,H:0,targets:[],spellFX:[],score:0,misses:0,timeLeft:0,
+  lastTime:null,lastSecond:0,
+  init(){
+    this.canvas=document.getElementById('spCanvas');
+    this.ctx=this.canvas.getContext('2d');
+    window.addEventListener('resize',()=>{if(document.getElementById('spellScr').classList.contains('off'))return;this.resize();});
+    this.canvas.addEventListener('click',e=>{
+      const r=this.canvas.getBoundingClientRect();
+      this.tryHit(e.clientX-r.left,e.clientY-r.top);
+    });
+    this.canvas.addEventListener('touchstart',e=>{
+      e.preventDefault();
+      const r=this.canvas.getBoundingClientRect(),t=e.touches[0];
+      this.tryHit(t.clientX-r.left,t.clientY-r.top);
+    },{passive:false});
+  },
+  resize(){this.canvas.width=window.innerWidth;this.canvas.height=window.innerHeight;this.W=this.canvas.width;this.H=this.canvas.height;},
+  open(){
+    MUS.play('minigame');
+    document.getElementById('spellScr').classList.remove('off');
+    document.getElementById('spOverlay').style.display='flex';
+    document.getElementById('spOTitle').textContent='⚔️ Dueling Club';
+    document.getElementById('spOMsg').textContent=
+      'Destroy training targets before they escape!\n\nClick / Tap a target to cast.\nHit the centre for full damage.\n\n45 seconds — good luck!';
+    document.getElementById('spStartBtn').style.display='';
+    if(!this.canvas)this.init();
+    this.resize();
+    gameState='spell';isBusy=true;
+  },
+  start(){
+    document.getElementById('spOverlay').style.display='none';
+    this.score=0;this.misses=0;this.timeLeft=45;
+    this.targets=[];this.spellFX=[];
+    this.lastTime=null;this.lastSecond=0;
+    for(let i=0;i<4;i++)this.spawnTarget();
+    this.running=true;
+    this.raf=requestAnimationFrame(t=>this.loop(t));
+  },
+  spawnTarget(){
+    const W=this.W,H=this.H,r=22+Math.random()*18;
+    const cols=['#cc4444','#4488cc','#44cc88','#cc9900','#aa44cc','#cc6622'];
+    this.targets.push({
+      x:r+Math.random()*(W-r*2),y:70+r+Math.random()*(H-120-r*2),
+      r,maxHp:3,hp:3,vx:(Math.random()-.5)*1.8,vy:(Math.random()-.5)*1.8,
+      color:cols[Math.floor(Math.random()*cols.length)],flash:0,age:0
+    });
+  },
+  tryHit(mx,my){
+    if(!this.running)return;
+    let hit=null,bestD=Infinity;
+    this.targets.forEach(t=>{
+      const dx=mx-t.x,dy=my-t.y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<t.r+24&&d<bestD){bestD=d;hit=t;}
+    });
+    sfx('spell');
+    this.spellFX.push({x:mx,y:my,life:1,color:hit?'#c9a227':'#4488cc'});
+    if(hit){
+      const centre=bestD<hit.r*.5;
+      hit.hp-=(centre?2:1);hit.flash=12;
+      if(hit.hp<=0){
+        this.score+=centre?15:10;
+        spawnParts(hit.color,10,hit.x-camX,hit.y-camY);
+        sfx('win');
+        this.targets=this.targets.filter(t=>t!==hit);
+        if(this.targets.length<5)this.spawnTarget();
+      }
+    } else {
+      this.misses++;
+    }
+    document.getElementById('spScore').textContent='⭐ '+this.score+' pts';
+  },
+  loop(now){
+    if(!this.running)return;
+    this.raf=requestAnimationFrame(t=>this.loop(t));
+    const dt=this.lastTime?Math.min((now-this.lastTime)/16.67,3):1;
+    this.lastTime=now;
+    if(!this.lastSecond)this.lastSecond=now;
+    if(now-this.lastSecond>=1000){
+      this.timeLeft--;this.lastSecond=now;
+      if(this.timeLeft<=0){this.endGame();return;}
+    }
+    const W=this.W,H=this.H;
+    this.targets.forEach(t=>{
+      t.age+=dt;t.x+=t.vx*dt;t.y+=t.vy*dt;
+      if(t.x<t.r||t.x>W-t.r)t.vx*=-1;
+      if(t.y<70+t.r||t.y>H-20-t.r)t.vy*=-1;
+      if(t.flash>0)t.flash--;
+      // Occasional speed burst
+      if(Math.floor(t.age)%120===0){t.vx=(Math.random()-.5)*2.5;t.vy=(Math.random()-.5)*2.5;}
+    });
+    this.spellFX=this.spellFX.filter(s=>{s.life-=.07;return s.life>0;});
+    document.getElementById('spTimer').textContent='⏱ '+this.timeLeft+'s';
+    this.draw(now);
+  },
+  draw(now){
+    const ctx=this.ctx,W=this.W,H=this.H;
+    // Background — stone hall
+    ctx.fillStyle='#08080f';ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='#ffffff06';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=48)for(let y=60;y<H;y+=48)ctx.strokeRect(x,y,48,48);
+    // Torches
+    [[W*.15,65],[W*.5,65],[W*.85,65]].forEach(([tx,ty])=>{
+      const flicker=.7+Math.sin(now*.012+tx)*.3;
+      ctx.shadowColor='#ff8800';ctx.shadowBlur=20*flicker;
+      ctx.fillStyle='#ff8800';ctx.fillText('🔥',tx-8,ty+8);
+      ctx.shadowBlur=0;
+    });
+    // Targets
+    this.targets.forEach(t=>{
+      ctx.shadowColor=t.color;ctx.shadowBlur=t.flash>0?24:10;
+      ctx.fillStyle=t.flash>0?'#ffffff':t.color;
+      ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,6.28);ctx.fill();
+      ctx.shadowBlur=0;
+      // Centre bullseye
+      ctx.strokeStyle=t.flash>0?t.color+'cc':'#ffffff44';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(t.x,t.y,t.r*.45,0,6.28);ctx.stroke();
+      // HP pips below
+      for(let i=0;i<t.maxHp;i++){
+        ctx.fillStyle=i<t.hp?'#fff':'#33333388';
+        ctx.beginPath();ctx.arc(t.x-8+(i*8),t.y+t.r+9,4,0,6.28);ctx.fill();
+      }
+      // Orbit ring
+      ctx.strokeStyle=t.color+'66';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(t.x,t.y,t.r+6+Math.sin(now*.004+t.x)*.8,0,6.28);ctx.stroke();
+    });
+    // Spell FX
+    this.spellFX.forEach(s=>{
+      ctx.globalAlpha=s.life;
+      ctx.fillStyle=s.color;ctx.shadowColor=s.color;ctx.shadowBlur=16*s.life;
+      ctx.beginPath();ctx.arc(s.x,s.y,10*s.life,0,6.28);ctx.fill();
+      ctx.shadowBlur=0;
+      for(let i=0;i<8;i++){
+        const a=i/8*6.28,len=36*s.life;
+        ctx.strokeStyle=s.color;ctx.lineWidth=2*s.life;
+        ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x+Math.cos(a)*len,s.y+Math.sin(a)*len);ctx.stroke();
+      }
+      ctx.globalAlpha=1;ctx.shadowBlur=0;
+    });
+  },
+  endGame(){
+    this.running=false;cancelAnimationFrame(this.raf);
+    const xpGain=this.score*2+15,goldGain=Math.max(0,Math.floor(this.score/2)-this.misses*2);
+    P.gold+=goldGain;gainXP(xpGain);saveGame();
+    document.getElementById('spOverlay').style.display='flex';
+    document.getElementById('spStartBtn').style.display='none';
+    document.getElementById('spOTitle').textContent='⚔️ Practice Complete!';
+    document.getElementById('spOMsg').textContent=
+      'Score: '+this.score+' pts\nMisses: '+this.misses+
+      '\n\n+'+xpGain+' XP  ·  +'+goldGain+'G';
+  },
+  exit(){
+    this.running=false;if(this.raf)cancelAnimationFrame(this.raf);
+    document.getElementById('spellScr').classList.add('off');
+    isBusy=false;gameState='map';promptZone=null;updateHUD();MUS.play('explore');
+  }
+};
+
+// ── QUIDDITCH MINI-GAME ───────────────────────────
+const QG={
+  canvas:null,ctx:null,running:false,raf:null,
+  W:0,H:0,player:null,snitch:null,bludgers:null,
+  timeLeft:0,hits:0,mouse:null,mouseDown:false,lastTime:null,lastSecond:0,
+  init(){
+    this.canvas=document.getElementById('qCanvas');
+    this.ctx=this.canvas.getContext('2d');
+    this.resize();
+    window.addEventListener('resize',()=>this.resize());
+    this.canvas.addEventListener('pointermove',e=>{const r=this.canvas.getBoundingClientRect();this.mouse={x:e.clientX-r.left,y:e.clientY-r.top};});
+    this.canvas.addEventListener('pointerdown',e=>{const r=this.canvas.getBoundingClientRect();this.mouse={x:e.clientX-r.left,y:e.clientY-r.top};this.mouseDown=true;});
+    this.canvas.addEventListener('pointerup',()=>{this.mouseDown=false;});
+  },
+  resize(){this.canvas.width=window.innerWidth;this.canvas.height=window.innerHeight;this.W=this.canvas.width;this.H=this.canvas.height;},
+  open(){
+    MUS.play('minigame');
+    document.getElementById('quidditchScr').classList.remove('off');
+    document.getElementById('qOverlay').style.display='flex';
+    document.getElementById('qOTitle').textContent='🧹 Quidditch!';
+    document.getElementById('qOMsg').textContent='Catch the Golden Snitch before time runs out!\nAvoid the Bludgers or take damage.\nUse WASD / Arrow keys or mouse to fly.';
+    document.getElementById('qStartBtn').style.display='';
+    if(!this.canvas)this.init();
+    this.resize();
+    gameState='quidditch';isBusy=true;
+  },
+  start(){
+    if(!this.canvas)this.init();
+    document.getElementById('qOverlay').style.display='none';
+    const W=this.W,H=this.H;
+    this.player={x:W/2,y:H*.7,vx:0,vy:0,r:14,trail:[]};
+    this.snitch={x:W/2,y:H*.25,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4,r:10,changeTimer:0};
+    this.bludgers=[{x:W*.2,y:H*.2,vx:2,vy:1.5,r:13,cooldown:0},{x:W*.8,y:H*.2,vx:-2,vy:1.5,r:13,cooldown:0}];
+    this.timeLeft=90;this.hits=0;this.mouse=null;this.mouseDown=false;this.lastTime=null;this.lastSecond=0;
+    this.running=true;
+    this.raf=requestAnimationFrame(t=>this.loop(t));
+  },
+  loop(now){
+    if(!this.running)return;
+    this.raf=requestAnimationFrame(t=>this.loop(t));
+    const dt=this.lastTime?Math.min((now-this.lastTime)/16.67,3):1;
+    this.lastTime=now;
+    if(!this.lastSecond)this.lastSecond=now;
+    if(now-this.lastSecond>=1000){this.timeLeft--;this.lastSecond=now;if(this.timeLeft<=0){this.endGame(false);return;}}
+    this.update(dt,now);this.draw(now);
+  },
+  update(dt,now){
+    const p=this.player,W=this.W,H=this.H,spd=5;
+    let tx=0,ty=0;
+    if(keys['ArrowLeft']||keys['a']||keys['A'])tx=-spd;
+    if(keys['ArrowRight']||keys['d']||keys['D'])tx=spd;
+    if(keys['ArrowUp']||keys['w']||keys['W'])ty=-spd;
+    if(keys['ArrowDown']||keys['s']||keys['S'])ty=spd;
+    if(this.mouse){const dx=this.mouse.x-p.x,dy=this.mouse.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist>20){tx=dx/dist*spd;ty=dy/dist*spd;}}
+    if(tx!==0&&ty!==0){tx*=.707;ty*=.707;}
+    p.vx+=(tx-p.vx)*.2;p.vy+=(ty-p.vy)*.2;
+    p.x=Math.max(p.r,Math.min(W-p.r,p.x+p.vx*dt));
+    p.y=Math.max(p.r,Math.min(H-p.r,p.y+p.vy*dt));
+    p.trail.unshift({x:p.x,y:p.y});if(p.trail.length>18)p.trail.pop();
+    // Snitch
+    const s=this.snitch;
+    s.changeTimer+=dt;
+    if(s.changeTimer>80+Math.random()*60){s.vx=(Math.random()-.5)*7;s.vy=(Math.random()-.5)*7;s.changeTimer=0;}
+    const sdx=p.x-s.x,sdy=p.y-s.y,sdist=Math.sqrt(sdx*sdx+sdy*sdy);
+    if(sdist<130){s.vx-=sdx/sdist*.4;s.vy-=sdy/sdist*.4;}
+    s.vx=Math.max(-8,Math.min(8,s.vx));s.vy=Math.max(-8,Math.min(8,s.vy));
+    s.x+=s.vx*dt;s.y+=s.vy*dt;
+    if(s.x<20){s.x=20;s.vx=Math.abs(s.vx);}if(s.x>W-20){s.x=W-20;s.vx=-Math.abs(s.vx);}
+    if(s.y<70){s.y=70;s.vy=Math.abs(s.vy);}if(s.y>H-20){s.y=H-20;s.vy=-Math.abs(s.vy);}
+    if(sdist<p.r+s.r){this.endGame(true);return;}
+    // Bludgers
+    this.bludgers.forEach(b=>{
+      const bdx=p.x-b.x,bdy=p.y-b.y,bdist=Math.sqrt(bdx*bdx+bdy*bdy);
+      b.vx+=bdx/bdist*.09*dt;b.vy+=bdy/bdist*.09*dt;
+      const bspd=Math.sqrt(b.vx*b.vx+b.vy*b.vy);
+      if(bspd>3.8){b.vx=b.vx/bspd*3.8;b.vy=b.vy/bspd*3.8;}
+      b.x=Math.max(b.r,Math.min(W-b.r,b.x+b.vx*dt));b.y=Math.max(b.r,Math.min(H-b.r,b.y+b.vy*dt));
+      if(b.x<=b.r||b.x>=W-b.r)b.vx*=-1;if(b.y<=b.r||b.y>=H-b.r)b.vy*=-1;
+      if(bdist<p.r+b.r&&!b.cooldown){this.hits++;b.cooldown=100;sfx('hit');p.vx=-(bdx/bdist)*9;p.vy=-(bdy/bdist)*9;}
+      if(b.cooldown>0)b.cooldown--;
+    });
+    document.getElementById('qTimer').textContent='⏱ '+this.timeLeft+'s';
+    document.getElementById('qScore').textContent='💥 Hits: '+this.hits;
+  },
+  draw(now){
+    const ctx=this.ctx,W=this.W,H=this.H,p=this.player;
+    // Sky
+    const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#050f2a');sky.addColorStop(1,'#1a3a6a');
+    ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+    // Pitch oval
+    ctx.strokeStyle='#ffffff18';ctx.lineWidth=3;
+    ctx.beginPath();ctx.ellipse(W/2,H/2,W*.42,H*.38,0,0,6.28);ctx.stroke();
+    ctx.strokeStyle='#ffffff0a';ctx.lineWidth=1;
+    ctx.beginPath();ctx.ellipse(W/2,H/2,W*.3,H*.25,0,0,6.28);ctx.stroke();
+    // Hoops (3 each side)
+    [-1,0,1].forEach((o,i)=>{
+      [W*.05,W*.95].forEach(hx=>{
+        const hy=H*.35+o*H*.15;
+        ctx.strokeStyle='#c9a22788';ctx.lineWidth=4;
+        ctx.beginPath();ctx.arc(hx,hy,22,0,6.28);ctx.stroke();
+        ctx.strokeStyle='#c9a22766';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(hx,hy+22);ctx.lineTo(hx,hy+65);ctx.stroke();
+      });
+    });
+    // Stars
+    ctx.fillStyle='#fff';
+    for(let i=0;i<50;i++){const sx=(i*137+50)%W,sy=(i*97+30)%(H*.45);const tw=.3+.7*Math.abs(Math.sin(now*.001+i));ctx.globalAlpha=tw;ctx.beginPath();ctx.arc(sx,sy,i%4===0?2:1,0,6.28);ctx.fill();}
+    ctx.globalAlpha=1;
+    // Broom trail
+    p.trail.forEach((pt,i)=>{const a=(1-i/p.trail.length)*.55;ctx.globalAlpha=a;ctx.fillStyle='#c9a227';ctx.beginPath();ctx.arc(pt.x,pt.y,3*(1-i/p.trail.length),0,6.28);ctx.fill();});
+    ctx.globalAlpha=1;
+    // Bludgers
+    this.bludgers.forEach(b=>{
+      ctx.shadowColor=b.cooldown>0?'#ff4444':'#333';ctx.shadowBlur=b.cooldown>0?18:6;
+      ctx.fillStyle=b.cooldown>0?'#cc2222':'#1a1a1a';ctx.strokeStyle='#555';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,6.28);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#3a3a3a';ctx.beginPath();ctx.arc(b.x-3,b.y-3,5,0,6.28);ctx.fill();
+      ctx.shadowBlur=0;
+    });
+    // Snitch glow + wings
+    const pulse=.8+Math.sin(now*.008)*.2;
+    ctx.shadowColor='#ffdd00';ctx.shadowBlur=24*pulse;
+    ctx.fillStyle='#ffcc00';ctx.beginPath();ctx.arc(this.snitch.x,this.snitch.y,this.snitch.r*pulse,0,6.28);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.globalAlpha=.65;ctx.fillStyle='#ffffffcc';
+    ctx.beginPath();ctx.ellipse(this.snitch.x-15,this.snitch.y,11,5,Math.sin(now*.025)*.6,0,6.28);ctx.fill();
+    ctx.beginPath();ctx.ellipse(this.snitch.x+15,this.snitch.y,11,5,Math.sin(now*.025)*.6,0,6.28);ctx.fill();
+    ctx.globalAlpha=1;
+    // Player broom + rider
+    const angle=Math.atan2(p.vy,p.vx)||0;
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(angle);
+    ctx.fillStyle='#5a3010';ctx.fillRect(-20,-3,40,5);
+    ctx.fillStyle='#8b6033';for(let i=0;i<6;i++)ctx.fillRect(16,-5+i*2,9,2);
+    ctx.fillStyle=P?HOUSES[P.house].color:'#cc3333';
+    ctx.beginPath();ctx.arc(0,-10,9,0,6.28);ctx.fill();
+    ctx.fillStyle='#f4c5a0';ctx.beginPath();ctx.arc(0,-19,6,0,6.28);ctx.fill();
+    ctx.restore();
+    // Proximity ring to snitch
+    const dx2=p.x-this.snitch.x,dy2=p.y-this.snitch.y,dist2=Math.sqrt(dx2*dx2+dy2*dy2);
+    if(dist2<220){ctx.globalAlpha=(1-dist2/220)*.5;ctx.strokeStyle='#ffdd00';ctx.lineWidth=2;ctx.beginPath();ctx.arc(this.snitch.x,this.snitch.y,dist2*.7,0,6.28);ctx.stroke();ctx.globalAlpha=1;}
+    // Danger bar (hits)
+    if(this.hits>0){ctx.fillStyle='rgba(255,68,68,0.55)';ctx.fillRect(0,0,W*Math.min(1,this.hits/6),5);}
+  },
+  endGame(won){
+    this.running=false;cancelAnimationFrame(this.raf);
+    document.getElementById('qOverlay').style.display='flex';
+    document.getElementById('qStartBtn').style.display='none';
+    if(won){
+      const xpGain=80+this.timeLeft;const goldGain=Math.max(15,55-this.hits*8);
+      P.gold+=goldGain;sfx('win');gainXP(xpGain);
+      document.getElementById('qOTitle').textContent='🏆 Snitch Caught!';
+      document.getElementById('qOMsg').textContent='You caught the Golden Snitch with '+this.timeLeft+'s to spare!\n+'+xpGain+' XP  ·  +'+goldGain+'G\nBludger hits: '+this.hits;
+    }else{
+      const dmg=Math.max(5,this.hits*12+20);P.hp=Math.max(1,P.hp-dmg);sfx('die');updateHUD();
+      document.getElementById('qOTitle').textContent='😔 Time\'s Up!';
+      document.getElementById('qOMsg').textContent='The Snitch escaped! You took '+dmg+' damage from exhaustion.\nBludger hits: '+this.hits;
+    }
+    saveGame();
+  },
+  exit(){
+    this.running=false;if(this.raf)cancelAnimationFrame(this.raf);
+    document.getElementById('quidditchScr').classList.add('off');
+    isBusy=false;gameState='map';promptZone=null;updateHUD();MUS.play('explore');
+  }
+};
+
+// ── STARS ─────────────────────────────────────────
+function initStars(){
+  const s=document.getElementById('stars');
+  for(let i=0;i<100;i++){
+    const d=document.createElement('div');const sz=Math.random()<.1?3:Math.random()<.3?2:1;
+    d.className='star';d.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;width:'+sz+'px;height:'+sz+'px;--d:'+(1.5+Math.random()*3)+'s;--dl:'+(Math.random()*3)+'s';
+    s.appendChild(d);
+  }
+}
+
+// ── BOOT ──────────────────────────────────────────
+window.onload=function(){
+  CW=wc.width=window.innerWidth;CH=wc.height=window.innerHeight;
+  initStars();G.showTitle();requestAnimationFrame(loop);
+};
+</script>
+</body>
+</html>
