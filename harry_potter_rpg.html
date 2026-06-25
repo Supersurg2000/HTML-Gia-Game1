@@ -11,10 +11,10 @@
 body{background:#000;overflow:hidden;font-family:'IM Fell English',Georgia,serif;color:var(--text);touch-action:none}
 canvas{display:block}
 #world{position:fixed;top:0;left:0}
-#hud{position:fixed;top:0;left:0;right:0;z-index:50;background:linear-gradient(180deg,rgba(5,2,16,.92),transparent);padding:8px 14px;display:flex;align-items:center;gap:10px}
+#hud{position:fixed;top:0;left:0;right:0;z-index:50;background:linear-gradient(180deg,rgba(5,2,16,.92),transparent);padding:8px 14px;display:flex;align-items:center;gap:10px;overflow:hidden}
 #hud.off{display:none}
 .hname{font-family:'Cinzel',serif;font-size:13px;color:var(--gold);white-space:nowrap}
-.bars{display:flex;flex-direction:column;gap:3px;flex:1;max-width:240px}
+.bars{display:flex;flex-direction:column;gap:3px;flex:1;max-width:min(240px,40vw)}
 .brow{display:flex;align-items:center;gap:5px}
 .blbl{font-size:9px;color:var(--muted);width:18px;text-align:right;font-family:'Cinzel',serif}
 .bbg{flex:1;height:9px;background:#0d081799;border-radius:8px;overflow:hidden;border:1px solid #ffffff18}
@@ -27,7 +27,9 @@ canvas{display:block}
 .hgold{font-size:11px;color:#ddaa22;font-family:'Cinzel',serif}
 .hyr{font-size:10px;color:var(--muted);font-family:'Cinzel',serif}
 .htime{font-size:10px;color:#aabbdd;font-family:'Cinzel',serif;letter-spacing:.5px}
-#menuBtn{margin-left:auto;background:rgba(5,2,16,.85);border:1.5px solid var(--border);border-radius:20px;color:var(--gold);font-family:'Cinzel',serif;font-size:11px;padding:5px 13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+#menuBtn{background:rgba(5,2,16,.85);border:1.5px solid var(--border);border-radius:20px;color:var(--gold);font-family:'Cinzel',serif;font-size:11px;padding:5px 13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+#hudRight{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
+@media(max-width:480px){.hgold,.hyr,.htime{display:none}}
 #menuBtn:hover{border-color:var(--gold);background:rgba(20,10,50,.95);box-shadow:0 0 8px rgba(201,162,39,.3)}
 .sc{background:#0d0826;border:1.5px solid var(--border);border-radius:8px;padding:12px 10px;cursor:pointer;transition:all .15s;text-align:center;user-select:none;position:relative}
 .sc:hover{border-color:#8855cc;transform:translateY(-2px);box-shadow:0 4px 16px #0000aa33}
@@ -159,9 +161,11 @@ canvas{display:block}
   <div class="hgold" id="hgold">0G</div>
   <div class="hyr" id="hyr">Yr 1</div>
   <div class="htime" id="htime">☀️ 8:00AM</div>
-  <button id="menuBtn" onclick="G.openMenu()">📖 Journal</button>
-  <button id="padToggleBtn" onclick="G.togglePad()" title="Toggle on-screen controls" style="background:rgba(200,162,39,.12);border:1px solid rgba(200,162,39,.3);color:var(--gold);border-radius:6px;padding:5px 9px;font-size:14px;cursor:pointer;line-height:1">🎮</button>
-  <button id="muteBtn" onclick="G.toggleMusic()" title="Toggle music" style="background:rgba(200,162,39,.12);border:1px solid rgba(200,162,39,.3);color:var(--gold);border-radius:6px;padding:5px 9px;font-size:14px;cursor:pointer;line-height:1">🎵</button>
+  <div id="hudRight">
+    <button id="menuBtn" onclick="G.openMenu()">📖 Journal</button>
+    <button id="padToggleBtn" onclick="G.togglePad()" title="Toggle on-screen controls" style="background:rgba(200,162,39,.12);border:1px solid rgba(200,162,39,.3);color:var(--gold);border-radius:6px;padding:5px 9px;font-size:14px;cursor:pointer;line-height:1">🎮</button>
+    <button id="muteBtn" onclick="G.toggleMusic()" title="Toggle music" style="background:rgba(200,162,39,.12);border:1px solid rgba(200,162,39,.3);color:var(--gold);border-radius:6px;padding:5px 9px;font-size:14px;cursor:pointer;line-height:1">🎵</button>
+  </div>
 </div>
 
 <canvas id="minimap" width="140" height="105" class="off"></canvas>
