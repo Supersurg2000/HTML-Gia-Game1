@@ -538,6 +538,33 @@ function getTile(tx,ty){
     if(tx===45||tx===50||ty===8||ty===14)return T.CW;
     return T.CF;
   }
+  // ── Four House Common Rooms ─────────────────────────────────────────────
+  // Gryffindor Tower (west of courtyard, Hogwarts west side)
+  if(tx>=21&&tx<=28&&ty>=20&&ty<=27){
+    if(tx===28&&(ty===23||ty===24))return T.DO;
+    if(ty===20||ty===27||tx===21||tx===28)return T.CW;
+    return T.CF;
+  }
+  // Slytherin Common Room (east of courtyard, south of east wing)
+  if(tx>=44&&tx<=50&&ty>=27&&ty<=34){
+    if(ty===27&&(tx===46||tx===47))return T.DO;
+    if(ty===27||ty===34||tx===44||tx===50)return T.CW;
+    return T.CF;
+  }
+  // Ravenclaw Tower (northeast, above north road)
+  if(tx>=49&&tx<=55&&ty>=1&&ty<=7){
+    if(ty===7&&(tx===51||tx===52))return T.DO;
+    if(ty===1||ty===7||tx===49||tx===55)return T.CW;
+    return T.CF;
+  }
+  if(tx>=49&&tx<=55&&ty>=7&&ty<=9)return T.P;
+  // Hufflepuff Cellar (southwest, below Gryffindor Tower)
+  if(tx>=21&&tx<=28&&ty>=29&&ty<=35){
+    if(ty===29&&(tx===23||tx===24))return T.DO;
+    if(ty===29||ty===35||tx===21||tx===28)return T.W;
+    return T.CF;
+  }
+  if(tx>=21&&tx<=28&&ty>=27&&ty<=29)return T.P;
   // Room of Requirement (west of courtyard, south of forest)
   if(tx>=19&&tx<=27&&ty>=37&&ty<=44){
     if(ty===37&&(tx===22||tx===23))return T.DO;
@@ -856,7 +883,11 @@ const ZONES=[
   {id:'honeydukes',name:'Honeydukes',          icon:'🍬',desc:'Magical sweets restore you.',  tx:31,ty:52,w:6,h:2,safe:true,              color:'#ff88cc'},
   {id:'duel',     name:'Dueling Club',         icon:'⚔️',desc:'Practice combat spells!',       tx:57,ty:51,w:6,h:6,minigame:'spell',       color:'#ff6644'},
   {id:'diagon',   name:'Diagon Alley',         icon:'🏪',desc:'The wizarding marketplace.',   tx:79,ty:41,w:3,h:3,shop:true,              color:'#ffdd44'},
-  {id:'azkaban',  name:'Azkaban Prison',       icon:'⛓️',desc:'The most dreaded wizard prison.',tx:77,ty:7, w:6,h:5,danger:4,lockYear:5,color:'#4466cc'},
+  {id:'azkaban',   name:'Azkaban Prison',       icon:'⛓️',desc:'The most dreaded wizard prison.',tx:77,ty:7, w:6,h:5,danger:4,lockYear:5,color:'#4466cc'},
+  {id:'gryffindor',name:'Gryffindor Tower',    icon:'🦁',desc:'The scarlet and gold common room — courage and honour.',tx:21,ty:20,w:7,h:7,safe:true,color:'#cc3333'},
+  {id:'slytherin', name:'Slytherin Dungeon',   icon:'🐍',desc:'The silver and green common room — ambition and cunning.',tx:44,ty:27,w:6,h:7,safe:true,color:'#226633'},
+  {id:'ravenclaw', name:'Ravenclaw Tower',     icon:'🦅',desc:'The blue and bronze common room — wisdom and wit.',tx:49,ty:1, w:6,h:6,safe:true,color:'#2255cc'},
+  {id:'hufflepuff',name:'Hufflepuff Cellar',   icon:'🦡',desc:'The yellow and black common room — loyalty and hard work.',tx:21,ty:29,w:7,h:6,safe:true,color:'#cc9900'},
 ];
 
 // ── GAME DATA ─────────────────────────────────────
@@ -2705,7 +2736,7 @@ const SP={
 // ── QUIDDITCH MINI-GAME ───────────────────────────
 const QG={
   canvas:null,ctx:null,running:false,raf:null,
-  W:0,H:0,player:null,snitch:null,bludgers:null,
+  W:0,H:0,player:null,snitch:null,bludgers:null,enemySeeker:null,npcs:null,quaffle:null,
   timeLeft:0,hits:0,mouse:null,mouseDown:false,lastTime:null,lastSecond:0,
   init(){
     this.canvas=document.getElementById('qCanvas');
@@ -2735,6 +2766,17 @@ const QG={
     this.player={x:W/2,y:H*.7,vx:0,vy:0,r:14,trail:[]};
     this.snitch={x:W/2,y:H*.25,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4,r:10,changeTimer:0};
     this.bludgers=[{x:W*.2,y:H*.2,vx:2,vy:1.5,r:13,cooldown:0},{x:W*.8,y:H*.2,vx:-2,vy:1.5,r:13,cooldown:0}];
+    this.enemySeeker={x:W/2,y:H*.3,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,r:12,trail:[]};
+    this.quaffle={x:W*.4,y:H*.55,vx:(Math.random()-.5)*3+1.5,vy:(Math.random()-.5)*3};
+    const fhcI=P?HOUSES[P.house].color:'#cc3333';
+    this.npcs=[
+      {x:W*.3,y:H*.55,vx:3,vy:-1,r:9,team:'friendly',role:'chaser',label:'Chaser',color:fhcI,trail:[]},
+      {x:W*.7,y:H*.65,vx:-2.5,vy:1.5,r:9,team:'friendly',role:'chaser',label:'Chaser',color:fhcI,trail:[]},
+      {x:W*.25,y:H*.4,vx:2,vy:2,r:10,team:'friendly',role:'beater',label:'Beater',color:fhcI,trail:[]},
+      {x:W*.5,y:H*.35,vx:-3,vy:2,r:9,team:'enemy',role:'chaser',label:'Chaser',color:'#226633',trail:[]},
+      {x:W*.65,y:H*.35,vx:2,vy:-2,r:9,team:'enemy',role:'chaser',label:'Chaser',color:'#226633',trail:[]},
+      {x:W*.75,y:H*.55,vx:-2,vy:-2,r:10,team:'enemy',role:'beater',label:'Beater',color:'#226633',trail:[]},
+    ];
     this.timeLeft=90;this.hits=0;this.mouse=null;this.mouseDown=false;this.lastTime=null;this.lastSecond=0;
     this.running=true;
     this.raf=requestAnimationFrame(t=>this.loop(t));
@@ -2745,7 +2787,7 @@ const QG={
     const dt=this.lastTime?Math.min((now-this.lastTime)/16.67,3):1;
     this.lastTime=now;
     if(!this.lastSecond)this.lastSecond=now;
-    if(now-this.lastSecond>=1000){this.timeLeft--;this.lastSecond=now;if(this.timeLeft<=0){this.endGame(false);return;}}
+    if(now-this.lastSecond>=1000){this.timeLeft--;this.lastSecond=now;if(this.timeLeft<=0){this.endGame('timeout');return;}}
     this.update(dt,now);this.draw(now);
   },
   update(dt,now){
@@ -2771,7 +2813,7 @@ const QG={
     s.x+=s.vx*dt;s.y+=s.vy*dt;
     if(s.x<20){s.x=20;s.vx=Math.abs(s.vx);}if(s.x>W-20){s.x=W-20;s.vx=-Math.abs(s.vx);}
     if(s.y<70){s.y=70;s.vy=Math.abs(s.vy);}if(s.y>H-20){s.y=H-20;s.vy=-Math.abs(s.vy);}
-    if(sdist<p.r+s.r){this.endGame(true);return;}
+    if(sdist<p.r+s.r){this.endGame('win');return;}
     // Bludgers
     this.bludgers.forEach(b=>{
       const bdx=p.x-b.x,bdy=p.y-b.y,bdist=Math.sqrt(bdx*bdx+bdy*bdy);
@@ -2783,6 +2825,36 @@ const QG={
       if(bdist<p.r+b.r&&!b.cooldown){this.hits++;b.cooldown=100;sfx('hit');p.vx=-(bdx/bdist)*9;p.vy=-(bdy/bdist)*9;}
       if(b.cooldown>0)b.cooldown--;
     });
+    // Enemy Seeker (Draco) — chases snitch at ~80% player speed
+    const es=this.enemySeeker;
+    const esdx=s.x-es.x,esdy=s.y-es.y,esdist=Math.sqrt(esdx*esdx+esdy*esdy);
+    if(esdist>40){es.vx+=(esdx/esdist)*.16*dt;es.vy+=(esdy/esdist)*.16*dt;}
+    const sspd2=Math.sqrt(es.vx*es.vx+es.vy*es.vy);
+    if(sspd2>3.2){es.vx=es.vx/sspd2*3.2;es.vy=es.vy/sspd2*3.2;}
+    es.x=Math.max(es.r,Math.min(W-es.r,es.x+es.vx*dt));
+    es.y=Math.max(70,Math.min(H-es.r,es.y+es.vy*dt));
+    es.trail.unshift({x:es.x,y:es.y});if(es.trail.length>12)es.trail.pop();
+    if(esdist<es.r+s.r){this.endGame('draco');return;}
+    // Chasers & Beaters patrol the pitch
+    const fhcU=P?HOUSES[P.house].color:'#cc3333';
+    this.npcs.forEach(n=>{
+      n.x+=n.vx*dt;n.y+=n.vy*dt;
+      if(n.x<40||n.x>W-40)n.vx*=-1;
+      if(n.y<70||n.y>H-40)n.vy*=-1;
+      n.color=n.team==='friendly'?fhcU:'#226633';
+      if(n.role==='beater'&&n.team==='friendly'){
+        this.bludgers.forEach(b=>{
+          const bpx=b.x-p.x,bpy=b.y-p.y,bd=Math.sqrt(bpx*bpx+bpy*bpy);
+          const ndx=b.x-n.x,ndy=b.y-n.y,nd=Math.sqrt(ndx*ndx+ndy*ndy);
+          if(nd<150&&bd<260){b.vx+=bpx/bd*.07*dt;b.vy+=bpy/bd*.07*dt;}
+        });
+      }
+      n.trail.unshift({x:n.x,y:n.y});if(n.trail.length>8)n.trail.pop();
+    });
+    const qa=this.quaffle;
+    qa.x+=qa.vx*dt;qa.y+=qa.vy*dt;
+    if(qa.x<30||qa.x>W-30)qa.vx*=-1;
+    if(qa.y<70||qa.y>H-30)qa.vy*=-1;
     document.getElementById('qTimer').textContent='⏱ '+this.timeLeft+'s';
     document.getElementById('qScore').textContent='💥 Hits: '+this.hits;
   },
@@ -2821,6 +2893,31 @@ const QG={
       ctx.fillStyle='#3a3a3a';ctx.beginPath();ctx.arc(b.x-3,b.y-3,5,0,6.28);ctx.fill();
       ctx.shadowBlur=0;
     });
+    // Quaffle (red ball, Chasers compete for it)
+    const qa2=this.quaffle;
+    ctx.shadowColor='#cc2200';ctx.shadowBlur=8;
+    ctx.fillStyle='#cc2200';ctx.beginPath();ctx.arc(qa2.x,qa2.y,10,0,6.28);ctx.fill();
+    ctx.strokeStyle='#ff6644';ctx.lineWidth=1.5;ctx.stroke();ctx.shadowBlur=0;
+    // Rider helper
+    const drawRider=(rx,ry,rcolor,rlabel,rtrail,rangle)=>{
+      rtrail.forEach((pt,i)=>{const a=(1-i/rtrail.length)*.35;ctx.globalAlpha=a;ctx.fillStyle=rcolor;ctx.beginPath();ctx.arc(pt.x,pt.y,2*(1-i/rtrail.length),0,6.28);ctx.fill();});
+      ctx.globalAlpha=1;
+      ctx.save();ctx.translate(rx,ry);ctx.rotate(rangle||0);
+      ctx.fillStyle='#5a3010';ctx.fillRect(-15,-2,30,4);
+      ctx.fillStyle='#8b6033';for(let i=0;i<5;i++)ctx.fillRect(11,-4+i*2,6,2);
+      ctx.fillStyle=rcolor;ctx.beginPath();ctx.arc(0,-7,6,0,6.28);ctx.fill();
+      ctx.fillStyle='#f4c5a0';ctx.beginPath();ctx.arc(0,-14,4,0,6.28);ctx.fill();
+      ctx.restore();
+      if(rlabel){ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(rx-20,ry-30,40,12);ctx.fillStyle=rcolor;ctx.fillText(rlabel,rx,ry-21);}
+    };
+    // Team NPCs
+    this.npcs.forEach(n=>{drawRider(n.x,n.y,n.color,n.label,n.trail,Math.atan2(n.vy,n.vx));});
+    // Enemy Seeker — Draco Malfoy (Nimbus 2001, Slytherin green)
+    const es2=this.enemySeeker;
+    drawRider(es2.x,es2.y,'#44cc88','DRACO',es2.trail,Math.atan2(es2.vy,es2.vx));
+    // Danger ring: how close Draco is to snitch
+    const edx2=es2.x-this.snitch.x,edy2=es2.y-this.snitch.y,edist2=Math.sqrt(edx2*edx2+edy2*edy2);
+    if(edist2<200){ctx.globalAlpha=(1-edist2/200)*.55;ctx.strokeStyle='#44cc88';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(this.snitch.x,this.snitch.y,edist2*.65,0,6.28);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
     // Snitch glow + wings
     const pulse=.8+Math.sin(now*.008)*.2;
     ctx.shadowColor='#ffdd00';ctx.shadowBlur=24*pulse;
@@ -2845,15 +2942,19 @@ const QG={
     // Danger bar (hits)
     if(this.hits>0){ctx.fillStyle='rgba(255,68,68,0.55)';ctx.fillRect(0,0,W*Math.min(1,this.hits/6),5);}
   },
-  endGame(won){
+  endGame(result){
     this.running=false;cancelAnimationFrame(this.raf);
     document.getElementById('qOverlay').style.display='flex';
     document.getElementById('qStartBtn').style.display='none';
-    if(won){
+    if(result==='win'){
       const xpGain=80+this.timeLeft;const goldGain=Math.max(15,55-this.hits*8);
       P.gold+=goldGain;sfx('win');gainXP(xpGain);
       document.getElementById('qOTitle').textContent='🏆 Snitch Caught!';
       document.getElementById('qOMsg').textContent='You caught the Golden Snitch with '+this.timeLeft+'s to spare!\n+'+xpGain+' XP  ·  +'+goldGain+'G\nBludger hits: '+this.hits;
+    }else if(result==='draco'){
+      const dmg=18;P.hp=Math.max(1,P.hp-dmg);sfx('die');updateHUD();
+      document.getElementById('qOTitle').textContent='😤 Draco Got the Snitch!';
+      document.getElementById('qOMsg').textContent='"Better luck next time, Potter." — Draco Malfoy\nSlytherin wins the match! −'+dmg+' HP\nBludger hits: '+this.hits;
     }else{
       const dmg=Math.max(5,this.hits*12+20);P.hp=Math.max(1,P.hp-dmg);sfx('die');updateHUD();
       document.getElementById('qOTitle').textContent='😔 Time\'s Up!';
