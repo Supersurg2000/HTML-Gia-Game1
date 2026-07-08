@@ -416,8 +416,9 @@ canvas{display:block}
   <canvas id="qCanvas" style="display:block;touch-action:none"></canvas>
   <div id="qOverlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,2,16,.88);z-index:20">
     <div id="qOTitle" style="font-family:'Cinzel Decorative',serif;font-size:28px;color:var(--gold);margin-bottom:10px"></div>
-    <div id="qOMsg" style="font-family:'Cinzel',serif;font-size:13px;color:var(--muted);margin-bottom:22px;text-align:center;max-width:340px;line-height:1.8"></div>
-    <button class="btn" id="qStartBtn" onclick="QG.start()">🏁 Kick Off!</button>
+    <div id="qOMsg" style="font-family:'Cinzel',serif;font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center;max-width:380px;line-height:1.7"></div>
+    <div id="qOppList" style="width:100%;max-width:420px;max-height:52vh;overflow-y:auto;padding:0 6px;margin-bottom:8px;display:none"></div>
+    <button class="btn" id="qStartBtn" style="display:none" onclick="QG.open()">🏁 Pick Rival</button>
     <button class="btn red" style="margin-top:6px" onclick="QG.exit()">← Leave Pitch</button>
   </div>
 </div>
@@ -2733,10 +2734,21 @@ const SP={
   }
 };
 
+// ── QUIDDITCH OPPONENTS ──────────────────────────
+const QUIDDITCH_OPPONENTS=[
+  {id:'draco',  name:'Draco Malfoy',   icon:'🐍',house:'Slytherin', color:'#44cc88',unlockLv:1, stars:1,strategy:'direct',    speed:3.0,delay:300,accel:.14,taunt:'"Better luck next time, Potter." — Draco Malfoy',           desc:'Spoiled heir on a Nimbus 2001. Slow to react.'},
+  {id:'cedric', name:'Cedric Diggory', icon:'⚡',house:'Hufflepuff',color:'#ddaa44',unlockLv:4, stars:2,strategy:'predict',   speed:3.5,delay:200,accel:.15,taunt:'"Well played — the Snitch just came my way." — Cedric',     desc:'Hogwarts Champion. Anticipates the Snitch trajectory.'},
+  {id:'cho',    name:'Cho Chang',      icon:'🌸',house:'Ravenclaw', color:'#4499ee',unlockLv:7, stars:2,strategy:'burst',     speed:4.0,delay:160,accel:.18,taunt:'"Oh! I\'m sorry — I spotted it first." — Cho',              desc:'Ravenclaw star. Lightning speed bursts & sharp reflexes.'},
+  {id:'krum',   name:'Viktor Krum',    icon:'🦅',house:'Durmstrang',color:'#cc5533',unlockLv:11,stars:3,strategy:'relentless',speed:4.5,delay:90, accel:.20,taunt:'"Vot can I say? Best seeker in ze vorld." — Krum',          desc:'World Cup seeker. Fast, relentless, unstoppable.'},
+  {id:'ginny',  name:'Ginny Weasley',  icon:'🦁',house:'Gryffindor',color:'#ee4444',unlockLv:15,stars:4,strategy:'blocker',   speed:4.2,delay:110,accel:.17,taunt:'"You were good. Just not good enough today." — Ginny',      desc:'Gryffindor natural. Cuts off your line to the Snitch.'},
+  {id:'flint',  name:'Marcus Flint',   icon:'👊',house:'Slytherin', color:'#55aa55',unlockLv:18,stars:4,strategy:'dirty',     speed:4.4,delay:70, accel:.19,taunt:'"Heh. Did those Bludgers slow you down?" — Flint',          desc:'Slytherin captain. Dirty tactics — sends Bludgers your way.'},
+  {id:'spectre',name:'Dark Seeker',    icon:'☠️',house:'Unknown',   color:'#bb44ff',unlockLv:22,stars:5,strategy:'perfect',   speed:5.5,delay:0,  accel:.28,taunt:'"There is no escape. Only darkness awaits you."',           desc:'No delay. No mercy. Perfect, relentless pursuit.'},
+];
 // ── QUIDDITCH MINI-GAME ───────────────────────────
 const QG={
   canvas:null,ctx:null,running:false,raf:null,
   W:0,H:0,player:null,snitch:null,bludgers:null,enemySeeker:null,npcs:null,quaffle:null,
+  selectedOpponent:null,selectedOpponentIdx:0,
   timeLeft:0,hits:0,mouse:null,mouseDown:false,lastTime:null,lastSecond:0,
   init(){
     this.canvas=document.getElementById('qCanvas');
@@ -2752,12 +2764,36 @@ const QG={
     MUS.play('minigame');
     document.getElementById('quidditchScr').classList.remove('off');
     document.getElementById('qOverlay').style.display='flex';
-    document.getElementById('qOTitle').textContent='🧹 Quidditch!';
-    document.getElementById('qOMsg').textContent='Catch the Golden Snitch before time runs out!\nAvoid the Bludgers or take damage.\nUse WASD / Arrow keys or mouse to fly.';
-    document.getElementById('qStartBtn').style.display='';
+    document.getElementById('qOTitle').textContent='🧹 Choose Your Rival Seeker';
+    document.getElementById('qOMsg').textContent='Catch the Snitch before your rival does!\nWASD / Arrow Keys or touch to fly · Avoid the Bludgers!';
+    document.getElementById('qStartBtn').style.display='none';
+    const list=document.getElementById('qOppList');
+    list.innerHTML='';list.style.display='block';
+    const plvl=P?P.level:1;
+    QUIDDITCH_OPPONENTS.forEach((opp,i)=>{
+      const locked=plvl<opp.unlockLv;
+      const stars='⭐'.repeat(opp.stars);
+      const card=document.createElement('div');
+      card.style.cssText='padding:8px 12px;border-radius:8px;border:1.5px solid '+(locked?'#222':opp.color+'55')+';background:'+(locked?'rgba(8,8,8,.4)':'rgba(10,10,25,.85)')+';cursor:'+(locked?'not-allowed':'pointer')+';display:flex;align-items:center;gap:10px;margin-bottom:5px;opacity:'+(locked?.35:1)+';transition:background .15s';
+      card.innerHTML='<span style="font-size:22px">'+(locked?'🔒':opp.icon)+'</span>'
+        +'<div style="flex:1;min-width:0"><div style="font-family:\'Cinzel\',serif;font-size:12px;color:'+(locked?'#444':opp.color)+'">'+(locked?'Unlock at Level '+opp.unlockLv:opp.name)+'</div>'
+        +'<div style="font-size:10px;color:#888;margin-top:2px">'+(locked?'':opp.house+' · '+stars+'<br>'+opp.desc)+'</div></div>';
+      if(!locked){
+        card.onmouseenter=()=>{card.style.background='rgba(25,25,55,.95)';};
+        card.onmouseleave=()=>{card.style.background='rgba(10,10,25,.85)';};
+        card.onclick=()=>QG.selectAndStart(i);
+      }
+      list.appendChild(card);
+    });
     if(!this.canvas)this.init();
     this.resize();
     gameState='quidditch';isBusy=true;
+  },
+  selectAndStart(idx){
+    this.selectedOpponent=QUIDDITCH_OPPONENTS[idx];
+    this.selectedOpponentIdx=idx;
+    document.getElementById('qOppList').style.display='none';
+    this.start();
   },
   start(){
     if(!this.canvas)this.init();
@@ -2766,7 +2802,8 @@ const QG={
     this.player={x:W/2,y:H*.7,vx:0,vy:0,r:14,trail:[]};
     this.snitch={x:W/2,y:H*.25,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4,r:10,changeTimer:0};
     this.bludgers=[{x:W*.2,y:H*.2,vx:2,vy:1.5,r:13,cooldown:0},{x:W*.8,y:H*.2,vx:-2,vy:1.5,r:13,cooldown:0}];
-    this.enemySeeker={x:W*.85,y:H*.75,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,r:12,trail:[],chaseDelay:300};
+    const opp=this.selectedOpponent||QUIDDITCH_OPPONENTS[0];
+    this.enemySeeker={x:W*.85,y:H*.75,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,r:12,trail:[],chaseDelay:opp.delay};
     this.quaffle={x:W*.4,y:H*.55,vx:(Math.random()-.5)*3+1.5,vy:(Math.random()-.5)*3};
     const fhcI=P?HOUSES[P.house].color:'#cc3333';
     this.npcs=[
@@ -2827,16 +2864,22 @@ const QG={
       if(bdist<p.r+b.r&&!b.cooldown){this.hits++;b.cooldown=100;sfx('hit');p.vx=-(bdx/bdist)*9;p.vy=-(bdy/bdist)*9;}
       if(b.cooldown>0)b.cooldown--;
     });
-    // Enemy Seeker (Draco) — waits 5s then chases snitch at ~75% player speed
-    const es=this.enemySeeker;
+    // Enemy Seeker — strategy-based AI
+    const es=this.enemySeeker,rivalOpp=this.selectedOpponent||QUIDDITCH_OPPONENTS[0];
     if(es.chaseDelay>0){
       es.chaseDelay-=dt;
     }else{
-      const esdx=s.x-es.x,esdy=s.y-es.y,esdist=Math.sqrt(esdx*esdx+esdy*esdy);
-      if(esdist>40){es.vx+=(esdx/esdist)*.14*dt;es.vy+=(esdy/esdist)*.14*dt;}
+      let etx=s.x,ety=s.y;
+      if(rivalOpp.strategy==='predict'){etx=Math.max(20,Math.min(W-20,s.x+s.vx*35));ety=Math.max(70,Math.min(H-20,s.y+s.vy*35));}
+      else if(rivalOpp.strategy==='blocker'){etx=(s.x*2+p.x)/3;ety=(s.y*2+p.y)/3;}
+      const esdx=etx-es.x,esdy=ety-es.y,esdist=Math.sqrt(esdx*esdx+esdy*esdy);
+      let curAcc=rivalOpp.accel;
+      if(rivalOpp.strategy==='burst'){curAcc=Math.floor(now/450)%2===0?rivalOpp.accel*1.7:rivalOpp.accel*.3;}
+      if(esdist>30){es.vx+=(esdx/esdist)*curAcc*dt;es.vy+=(esdy/esdist)*curAcc*dt;}
       const sspd2=Math.sqrt(es.vx*es.vx+es.vy*es.vy);
-      if(sspd2>3.0){es.vx=es.vx/sspd2*3.0;es.vy=es.vy/sspd2*3.0;}
-      if(esdist<es.r+s.r){this.endGame('draco');return;}
+      if(sspd2>rivalOpp.speed){es.vx=es.vx/sspd2*rivalOpp.speed;es.vy=es.vy/sspd2*rivalOpp.speed;}
+      if(rivalOpp.strategy==='dirty'&&Math.random()<.008){this.bludgers.forEach(b=>{const bdx=p.x-b.x,bdy=p.y-b.y,bd=Math.sqrt(bdx*bdx+bdy*bdy);if(bd<500){b.vx+=bdx/bd*2.5;b.vy+=bdy/bd*2.5;}});}
+      if(Math.sqrt((s.x-es.x)*(s.x-es.x)+(s.y-es.y)*(s.y-es.y))<es.r+s.r){this.endGame('draco');return;}
     }
     es.x=Math.max(es.r,Math.min(W-es.r,es.x+es.vx*dt));
     es.y=Math.max(70,Math.min(H-es.r,es.y+es.vy*dt));
@@ -2918,13 +2961,13 @@ const QG={
     };
     // Team NPCs
     this.npcs.forEach(n=>{drawRider(n.x,n.y,n.color,n.label,n.trail,Math.atan2(n.vy,n.vx));});
-    // Enemy Seeker — Draco Malfoy (Nimbus 2001, Slytherin green)
-    const es2=this.enemySeeker;
-    const dracoLbl=es2.chaseDelay>0?'DRACO ('+Math.ceil(es2.chaseDelay/60)+'s)':'DRACO';
-    drawRider(es2.x,es2.y,'#44cc88',dracoLbl,es2.trail,Math.atan2(es2.vy,es2.vx));
-    // Danger ring: how close Draco is to snitch
+    // Enemy Seeker — dynamic opponent
+    const es2=this.enemySeeker,rOpp=this.selectedOpponent||QUIDDITCH_OPPONENTS[0];
+    const esLbl=es2.chaseDelay>0?rOpp.name+' ('+Math.ceil(es2.chaseDelay/60)+'s)':rOpp.name.split(' ')[0].toUpperCase();
+    drawRider(es2.x,es2.y,rOpp.color,esLbl,es2.trail,Math.atan2(es2.vy,es2.vx));
+    // Danger ring: how close rival is to snitch
     const edx2=es2.x-this.snitch.x,edy2=es2.y-this.snitch.y,edist2=Math.sqrt(edx2*edx2+edy2*edy2);
-    if(edist2<200){ctx.globalAlpha=(1-edist2/200)*.55;ctx.strokeStyle='#44cc88';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(this.snitch.x,this.snitch.y,edist2*.65,0,6.28);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
+    if(edist2<200){ctx.globalAlpha=(1-edist2/200)*.55;ctx.strokeStyle=rOpp.color;ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(this.snitch.x,this.snitch.y,edist2*.65,0,6.28);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
     // Snitch glow + wings
     const pulse=.8+Math.sin(now*.008)*.2;
     ctx.shadowColor='#ffdd00';ctx.shadowBlur=24*pulse;
@@ -2952,20 +2995,23 @@ const QG={
   endGame(result){
     this.running=false;cancelAnimationFrame(this.raf);
     document.getElementById('qOverlay').style.display='flex';
-    document.getElementById('qStartBtn').style.display='none';
+    document.getElementById('qOppList').style.display='none';
+    const sb=document.getElementById('qStartBtn');
+    sb.textContent='🏁 Pick Rival';sb.onclick=()=>QG.open();sb.style.display='';
+    const rival=this.selectedOpponent||QUIDDITCH_OPPONENTS[0];
     if(result==='win'){
       const xpGain=80+this.timeLeft;const goldGain=Math.max(15,55-this.hits*8);
       P.gold+=goldGain;sfx('win');gainXP(xpGain);
       document.getElementById('qOTitle').textContent='🏆 Snitch Caught!';
-      document.getElementById('qOMsg').textContent='You caught the Golden Snitch with '+this.timeLeft+'s to spare!\n+'+xpGain+' XP  ·  +'+goldGain+'G\nBludger hits: '+this.hits;
+      document.getElementById('qOMsg').textContent='You beat '+rival.name+'! '+this.timeLeft+'s to spare.\n+'+xpGain+' XP  ·  +'+goldGain+'G  ·  Bludger hits: '+this.hits;
     }else if(result==='draco'){
       const dmg=18;P.hp=Math.max(1,P.hp-dmg);sfx('die');updateHUD();
-      document.getElementById('qOTitle').textContent='😤 Draco Got the Snitch!';
-      document.getElementById('qOMsg').textContent='"Better luck next time, Potter." — Draco Malfoy\nSlytherin wins the match! −'+dmg+' HP\nBludger hits: '+this.hits;
+      document.getElementById('qOTitle').textContent='😤 '+rival.name+' Got the Snitch!';
+      document.getElementById('qOMsg').textContent=rival.taunt+'\n−'+dmg+' HP  ·  Bludger hits: '+this.hits;
     }else{
       const dmg=Math.max(5,this.hits*12+20);P.hp=Math.max(1,P.hp-dmg);sfx('die');updateHUD();
       document.getElementById('qOTitle').textContent='😔 Time\'s Up!';
-      document.getElementById('qOMsg').textContent='The Snitch escaped! You took '+dmg+' damage from exhaustion.\nBludger hits: '+this.hits;
+      document.getElementById('qOMsg').textContent='The Snitch escaped! −'+dmg+' HP from exhaustion.\nBludger hits: '+this.hits;
     }
     saveGame();
   },
