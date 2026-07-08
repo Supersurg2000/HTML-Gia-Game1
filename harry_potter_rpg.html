@@ -2766,7 +2766,7 @@ const QG={
     this.player={x:W/2,y:H*.7,vx:0,vy:0,r:14,trail:[]};
     this.snitch={x:W/2,y:H*.25,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4,r:10,changeTimer:0};
     this.bludgers=[{x:W*.2,y:H*.2,vx:2,vy:1.5,r:13,cooldown:0},{x:W*.8,y:H*.2,vx:-2,vy:1.5,r:13,cooldown:0}];
-    this.enemySeeker={x:W/2,y:H*.3,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,r:12,trail:[]};
+    this.enemySeeker={x:W*.85,y:H*.75,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,r:12,trail:[],chaseDelay:300};
     this.quaffle={x:W*.4,y:H*.55,vx:(Math.random()-.5)*3+1.5,vy:(Math.random()-.5)*3};
     const fhcI=P?HOUSES[P.house].color:'#cc3333';
     this.npcs=[
@@ -2809,6 +2809,8 @@ const QG={
     if(s.changeTimer>80+Math.random()*60){s.vx=(Math.random()-.5)*7;s.vy=(Math.random()-.5)*7;s.changeTimer=0;}
     const sdx=p.x-s.x,sdy=p.y-s.y,sdist=Math.sqrt(sdx*sdx+sdy*sdy);
     if(sdist<130){s.vx-=sdx/sdist*.4;s.vy-=sdy/sdist*.4;}
+    const esdxS=this.enemySeeker.x-s.x,esdyS=this.enemySeeker.y-s.y,esdistS=Math.sqrt(esdxS*esdxS+esdyS*esdyS);
+    if(esdistS<130){s.vx-=esdxS/esdistS*.35;s.vy-=esdyS/esdistS*.35;}
     s.vx=Math.max(-8,Math.min(8,s.vx));s.vy=Math.max(-8,Math.min(8,s.vy));
     s.x+=s.vx*dt;s.y+=s.vy*dt;
     if(s.x<20){s.x=20;s.vx=Math.abs(s.vx);}if(s.x>W-20){s.x=W-20;s.vx=-Math.abs(s.vx);}
@@ -2825,16 +2827,20 @@ const QG={
       if(bdist<p.r+b.r&&!b.cooldown){this.hits++;b.cooldown=100;sfx('hit');p.vx=-(bdx/bdist)*9;p.vy=-(bdy/bdist)*9;}
       if(b.cooldown>0)b.cooldown--;
     });
-    // Enemy Seeker (Draco) — chases snitch at ~80% player speed
+    // Enemy Seeker (Draco) — waits 5s then chases snitch at ~75% player speed
     const es=this.enemySeeker;
-    const esdx=s.x-es.x,esdy=s.y-es.y,esdist=Math.sqrt(esdx*esdx+esdy*esdy);
-    if(esdist>40){es.vx+=(esdx/esdist)*.16*dt;es.vy+=(esdy/esdist)*.16*dt;}
-    const sspd2=Math.sqrt(es.vx*es.vx+es.vy*es.vy);
-    if(sspd2>3.2){es.vx=es.vx/sspd2*3.2;es.vy=es.vy/sspd2*3.2;}
+    if(es.chaseDelay>0){
+      es.chaseDelay-=dt;
+    }else{
+      const esdx=s.x-es.x,esdy=s.y-es.y,esdist=Math.sqrt(esdx*esdx+esdy*esdy);
+      if(esdist>40){es.vx+=(esdx/esdist)*.14*dt;es.vy+=(esdy/esdist)*.14*dt;}
+      const sspd2=Math.sqrt(es.vx*es.vx+es.vy*es.vy);
+      if(sspd2>3.0){es.vx=es.vx/sspd2*3.0;es.vy=es.vy/sspd2*3.0;}
+      if(esdist<es.r+s.r){this.endGame('draco');return;}
+    }
     es.x=Math.max(es.r,Math.min(W-es.r,es.x+es.vx*dt));
     es.y=Math.max(70,Math.min(H-es.r,es.y+es.vy*dt));
     es.trail.unshift({x:es.x,y:es.y});if(es.trail.length>12)es.trail.pop();
-    if(esdist<es.r+s.r){this.endGame('draco');return;}
     // Chasers & Beaters patrol the pitch
     const fhcU=P?HOUSES[P.house].color:'#cc3333';
     this.npcs.forEach(n=>{
@@ -2914,7 +2920,8 @@ const QG={
     this.npcs.forEach(n=>{drawRider(n.x,n.y,n.color,n.label,n.trail,Math.atan2(n.vy,n.vx));});
     // Enemy Seeker — Draco Malfoy (Nimbus 2001, Slytherin green)
     const es2=this.enemySeeker;
-    drawRider(es2.x,es2.y,'#44cc88','DRACO',es2.trail,Math.atan2(es2.vy,es2.vx));
+    const dracoLbl=es2.chaseDelay>0?'DRACO ('+Math.ceil(es2.chaseDelay/60)+'s)':'DRACO';
+    drawRider(es2.x,es2.y,'#44cc88',dracoLbl,es2.trail,Math.atan2(es2.vy,es2.vx));
     // Danger ring: how close Draco is to snitch
     const edx2=es2.x-this.snitch.x,edy2=es2.y-this.snitch.y,edist2=Math.sqrt(edx2*edx2+edy2*edy2);
     if(edist2<200){ctx.globalAlpha=(1-edist2/200)*.55;ctx.strokeStyle='#44cc88';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(this.snitch.x,this.snitch.y,edist2*.65,0,6.28);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
