@@ -161,6 +161,7 @@ canvas{display:block}
   <div class="hgold" id="hgold">0G</div>
   <div class="hyr" id="hyr">Yr 1</div>
   <div class="htime" id="htime">☀️ 8:00AM</div>
+  <div id="hmission" style="display:none;font-size:9px;color:#f0c040;background:rgba(0,0,0,.5);border:1px solid #c47820;border-radius:5px;padding:2px 7px;margin-top:2px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
   <div id="hudRight">
     <button id="menuBtn" onclick="G.openMenu()">📖 Journal</button>
     <button id="padToggleBtn" onclick="G.togglePad()" title="Toggle on-screen controls" style="background:rgba(200,162,39,.12);border:1px solid rgba(200,162,39,.3);color:var(--gold);border-radius:6px;padding:5px 9px;font-size:14px;cursor:pointer;line-height:1">🎮</button>
@@ -184,6 +185,28 @@ canvas{display:block}
   <div id="npcPReward" style="color:#ffaa44;font-size:10px;margin-bottom:10px;font-style:italic"></div>
   <button class="zbtn" onclick="G.acceptChallenge()">⚔️ Accept Duel</button>
   <button class="zbtn no" onclick="G.declineChallenge()">← Not now</button>
+</div>
+
+<!-- Owl interaction prompt -->
+<div id="owlPrompt" style="position:fixed;bottom:210px;left:50%;transform:translateX(-50%);z-index:61;background:rgba(10,6,28,.97);border:2px solid #c47820;border-radius:10px;padding:14px 22px;text-align:center;font-family:'Cinzel',serif;display:none;min-width:260px;max-width:340px;box-shadow:0 4px 28px #c4782044">
+  <div style="font-size:30px;margin-bottom:4px">🦉</div>
+  <div id="owlPName" style="color:#f0c040;font-size:13px;font-weight:700;margin-bottom:4px"></div>
+  <div id="owlPMsg" style="color:var(--muted);font-size:10px;margin-bottom:10px;line-height:1.6"></div>
+  <button class="zbtn" onclick="OWLS.interact()">📬 Receive Delivery</button>
+  <button class="zbtn no" onclick="document.getElementById('owlPrompt').style.display='none';OWLS.activeOwl=null">← Shoo away</button>
+</div>
+
+<!-- Owl letter parchment modal -->
+<div id="owlModal" style="position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72)">
+  <div style="background:linear-gradient(160deg,#f5e6c0,#eddba0,#e8d090);border:3px solid #8b6010;border-radius:10px;padding:28px 30px;max-width:380px;width:90%;box-shadow:0 8px 40px #0009;position:relative;font-family:'Georgia',serif;color:#2a1800">
+    <div id="owlSeal" style="font-size:38px;text-align:center;margin-bottom:6px"></div>
+    <div style="text-align:center;font-size:11px;color:#6b4010;margin-bottom:14px;letter-spacing:1px;font-family:'Cinzel',serif">— HOGWARTS OWL POST —</div>
+    <div id="owlLetterFrom" style="font-size:12px;font-weight:700;color:#4a2800;margin-bottom:10px;font-family:'Cinzel',serif"></div>
+    <div id="owlLetterText" style="font-size:13px;line-height:1.7;color:#2a1800;min-height:60px"></div>
+    <div style="margin-top:18px;text-align:right">
+      <button class="btn" onclick="OWLS.closeModal()" style="font-size:11px;padding:6px 14px">📜 Roll up parchment</button>
+    </div>
+  </div>
 </div>
 
 <div id="dpad">
@@ -977,7 +1000,7 @@ function mkPlayer(name,house,gender){
     hp:0,mp:0,atk:18,def:8,crit:(h.bonuses.critChance||.05),
     spells:['lumos','expelliarmus','stupefy'],
     inventory:{wiggenweld:2},status:[],defeatedBosses:[],
-    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
+    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],activeMission:null,wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
   pl.hp=pl.maxHp;pl.mp=pl.maxMp;
   if(house==='h')pl.inventory.wiggenweld=(pl.inventory.wiggenweld||0)+3;
   return pl;
@@ -1290,7 +1313,8 @@ function syncToast(){
   var zp=document.getElementById('zprompt');
   var np=document.getElementById('npcPrompt');
   if(!t)return;
-  var promptOpen=(zp&&zp.style.display!=='none')||(np&&np.style.display!=='none');
+  var op=document.getElementById('owlPrompt');
+  var promptOpen=(zp&&zp.style.display!=='none')||(np&&np.style.display!=='none')||(op&&op.style.display!=='none');
   t.style.bottom=promptOpen?'350px':'175px';
 }
 function toast(msg,dur){
@@ -1311,6 +1335,9 @@ function updateHUD(){
   const hp=Math.max(0,P.hp/P.maxHp*100),mp=Math.max(0,P.mp/P.maxMp*100),xp=Math.min(100,P.xp/P.xpToNext*100);
   document.getElementById('bhp').style.width=hp+'%';document.getElementById('bmp').style.width=mp+'%';document.getElementById('bxp').style.width=xp+'%';
   document.getElementById('vhp').textContent=P.hp+'/'+P.maxHp;document.getElementById('vmp').textContent=P.mp+'/'+P.maxMp;document.getElementById('vxp').textContent=P.xp+'/'+P.xpToNext;
+  const mEl=document.getElementById('hmission');
+  if(P.activeMission){mEl.style.display='block';mEl.textContent='📬 '+P.activeMission.icon+' '+P.activeMission.title;}
+  else{mEl.style.display='none';}
 }
 
 // ── MINIMAP ───────────────────────────────────────
@@ -1410,6 +1437,7 @@ function showZonePrompt(z){
 function enterZone(){
   const z=promptZone;if(!z)return;
   document.getElementById('zprompt').style.display='none';
+  OWLS.checkMissionComplete(z.id);
   if(z.safe){P.hp=P.maxHp;P.mp=P.maxMp;P.status=[];sfx('heal');spawnParts('#44dd88',20,CW/2,CH/2);toast('Fully restored!');updateHUD();saveGame();return;}
   if(z.shop){G.showShop();return;}
   if(z.dorm){G.showDorm();return;}
@@ -1736,7 +1764,7 @@ function setActiveSlot(n){localStorage.setItem('hpa2_active',String(n));}
 function getSlotData(n){const r=localStorage.getItem(slotKey(n));return r?JSON.parse(r):null;}
 function migrateOldSave(){const old=localStorage.getItem('hpa2');if(!old)return;try{const p=JSON.parse(old);if(!getSlotData(1))localStorage.setItem(slotKey(1),JSON.stringify({player:p,savedAt:Date.now()}));}catch(e){}localStorage.removeItem('hpa2');}
 function sanitizePlayer(p){
-  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};
+  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};if(p.activeMission===undefined)p.activeMission=null;
   // Rebuild equippedSpells
   if(!p.equippedSpells||!p.equippedSpells.length)p.equippedSpells=p.spells.slice(0,6);
   p.equippedSpells=p.equippedSpells.filter(function(k){return p.spells.includes(k);});
@@ -2135,6 +2163,7 @@ function initWorld(){
   buildMinimap();
   camX=P.wx-CW/2;camY=P.wy-CH/2;tCX=camX;tCY=camY;
   initNPCs();
+  OWLS.init();
   enterMap();
 }
 
@@ -2170,8 +2199,9 @@ function loop(now){
   drawAnimated(now);
   drawBeacons(now);
 
-  // NPCs
+  // NPCs + Owls
   updateNPCs(now);drawNPCs(now);
+  OWLS.update(now);OWLS.draw(now);
 
   // Player shadow + sprite
   const px=Math.round(P.wx-camX),py=Math.round(P.wy-camY);
@@ -2438,6 +2468,197 @@ function initNPCs(){
   const t=TEACHER_NPCS.map(n=>({...n,x:n.home.x,y:n.home.y,wt:0}));
   activeNPCs=[...c,...t];
 }
+// ── OWL SYSTEM ──────────────────────────────────────────────────
+const OWL_LETTERS=[
+  {from:'Hermione Granger',seal:'📚',text:"Don't forget — the library closes at 9. I've reserved Hogwarts: A History for you. Please don't be late again."},
+  {from:'Ron Weasley',     seal:'♟️',text:"Mum sent Chocolate Frogs. I may have eaten most of them. Sorry. Come to the common room later? — Ron"},
+  {from:'Albus Dumbledore',seal:'⭐',text:"Happiness can be found even in the darkest of times, if one only remembers to turn on the light. Stay vigilant."},
+  {from:'Rubeus Hagrid',   seal:'🐉',text:"Come visit soon! Norbert's been asking abou' yeh. Well, he growled in yer direction, which is basically the same thing."},
+  {from:'Luna Lovegood',   seal:'🌙',text:"I believe there are Nargles near the Owlery. Also I found your scarf behind the Quidditch stands — it was very radish-shaped."},
+  {from:'Sirius Black',    seal:'🐾',text:"Stay safe out there. The ones who love us never truly leave us. I'm watching over you. — Padfoot."},
+  {from:'Prof. McGonagall',seal:'🦁',text:"Your transfiguration marks are improving considerably. Do not let them slip. Hard work now means freedom later. — McGonagall"},
+  {from:'Neville Longbottom',seal:'🌱',text:"Gran says hello! Also, have you seen Trevor? He's gone missing AGAIN. I think he went toward the greenhouses."},
+  {from:'Fred & George',   seal:'💥',text:"Our newest product: Skiving Snackboxes! First one's free for old friends. Usual conditions apply. — Weasleys' Wizard Wheezes"},
+  {from:'Dobby',           seal:'🧦',text:"Dobby is so happy to be sending letters! Dobby thinks you are very great and brave and Dobby is very proud of you."},
+  {from:'Ginny Weasley',   seal:'🌟',text:"Heard what happened at the pitch — brilliant flying! Even Fred was impressed, and he never says that. Watch out for Draco though."},
+  {from:'The Sorting Hat', seal:'🎩',text:"I see you've been busy. Not exactly the quiet studious type, are we? Good — Hogwarts needs bravery more than ever these days."},
+];
+const OWL_MISSIONS=[
+  {id:'m_forest',  icon:'🌲',title:"Hagrid's Errand",    desc:'Hagrid needs a brave volunteer to fetch something from the Forbidden Forest.',      zone:'forest',   reward:{gold:40,xp:60}},
+  {id:'m_hogsmeade',icon:'🏘️',title:'Hogsmeade Delivery',desc:'Deliver a parcel to the Three Broomsticks before the snow sets in.',                zone:'hogsmeade',reward:{gold:50,xp:40}},
+  {id:'m_graveyard',icon:'⚰️',title:'Strange Lights',    desc:'Mysterious lights were spotted near the Graveyard. Investigate and report back.',   zone:'graveyard',reward:{gold:60,xp:80}},
+  {id:'m_dragons',  icon:'🐉',title:'Dragon Watch',      desc:'The dragon handlers need a brave assistant near the Dragon Enclosure.',             zone:'dragons',  reward:{gold:70,xp:90}},
+  {id:'m_azkaban',  icon:'🏰',title:'Distress Signal',   desc:'A faint call was traced to near Azkaban. Proceed with extreme caution.',           zone:'azkaban',  reward:{gold:80,xp:100}},
+  {id:'m_roomreq',  icon:'✨',title:'Something Lost',    desc:'Someone left something vital in the Room of Requirement. Retrieve it.',            zone:'roomreq',  reward:{gold:45,xp:70}},
+];
+
+const OWLS={
+  list:[],
+  activeOwl:null,
+  _lastUpdate:0,
+
+  init(){
+    const mw=MW*TS,mh=MH*TS;
+    this.list=[
+      {wx:820, wy:420,  twx:1400,twy:600, state:'flying',hoverTimer:0,cooldown:0,wingPhase:0,   name:'Hedwig',    size:22},
+      {wx:2500,wy:900,  twx:1800,twy:700, state:'flying',hoverTimer:0,cooldown:0,wingPhase:2.1, name:'Errol',     size:20},
+      {wx:1600,wy:1500, twx:900, twy:1100,state:'flying',hoverTimer:0,cooldown:0,wingPhase:4.2, name:'Pigwidgeon',size:18},
+    ];
+  },
+
+  update(now){
+    if(!this.list.length)return;
+    if(now-this._lastUpdate<16)return;
+    this._lastUpdate=now;
+    const mw=MW*TS,mh=MH*TS;
+    this.list.forEach(owl=>{
+      owl.wingPhase+=0.07;
+      if(owl.state==='hovering'){
+        owl.wx+=Math.sin(owl.wingPhase*0.3)*0.6;
+        owl.wy+=Math.cos(owl.wingPhase*0.25)*0.4;
+        owl.hoverTimer-=16;
+        if(owl.hoverTimer<=0){owl.state='flying';owl.twx=400+Math.random()*(mw-800);owl.twy=150+Math.random()*(mh-300);}
+        return;
+      }
+      const ddx=owl.twx-owl.wx,ddy=owl.twy-owl.wy,dist=Math.sqrt(ddx*ddx+ddy*ddy);
+      if(dist<80){
+        if(now>owl.cooldown&&Math.random()<0.3){
+          owl.state='hovering';
+          owl.hoverTimer=9000+Math.random()*8000;
+        }else{
+          owl.twx=400+Math.random()*(mw-800);
+          owl.twy=150+Math.random()*(mh-300);
+        }
+      }else{
+        const spd=2.0;
+        owl.wx+=ddx/dist*spd;
+        owl.wy+=ddy/dist*spd;
+      }
+    });
+  },
+
+  draw(now){
+    if(!this.list.length)return;
+    wctx.textAlign='center';
+    let nearOwl=null,nearDist=Infinity;
+    this.list.forEach(owl=>{
+      const sx=owl.wx-camX,sy=owl.wy-camY;
+      if(sx<-60||sx>CW+60||sy<-80||sy>CH+60)return;
+      const bob=Math.sin(now*0.004+owl.wingPhase)*5;
+      const isHover=owl.state==='hovering';
+      if(isHover){
+        const pulse=0.5+0.5*Math.sin(now*0.005);
+        wctx.globalAlpha=pulse*0.5;
+        wctx.strokeStyle='#f0c040';wctx.lineWidth=2.5;
+        wctx.setLineDash([5,5]);
+        wctx.beginPath();wctx.arc(sx,sy+bob,26,0,6.28);wctx.stroke();
+        wctx.setLineDash([]);wctx.globalAlpha=1;
+        wctx.font='16px serif';wctx.fillText('✉️',sx,sy+bob-32);
+      }
+      wctx.globalAlpha=0.2;wctx.fillStyle='#000';
+      wctx.beginPath();wctx.ellipse(sx,sy+bob+12,10,3,0,0,6.28);wctx.fill();
+      wctx.globalAlpha=1;
+      const scaleY=1+Math.sin(now*0.014+owl.wingPhase)*0.12;
+      wctx.save();wctx.translate(sx,sy+bob);wctx.scale(1,scaleY);
+      wctx.font=owl.size+'px serif';wctx.fillText('🦉',0,0);
+      wctx.restore();
+      if(isHover){
+        const pdx=P.wx-owl.wx,pdy=P.wy-owl.wy,pd=Math.sqrt(pdx*pdx+pdy*pdy);
+        if(pd<nearDist){nearDist=pd;nearOwl=owl;}
+      }
+    });
+    wctx.textAlign='left';
+    // Show/hide prompt based on nearest hovering owl
+    if(!isBusy&&gameState==='map'&&nearOwl&&nearDist<110){
+      if(this.activeOwl!==nearOwl){
+        this.activeOwl=nearOwl;
+        document.getElementById('owlPName').textContent=nearOwl.name+' has a delivery!';
+        document.getElementById('owlPMsg').textContent='An owl is hovering nearby with a package.\nApproach and receive your delivery.';
+        document.getElementById('owlPrompt').style.display='block';
+      }
+    }else if(this.activeOwl&&(nearDist>130||!nearOwl||isBusy)){
+      document.getElementById('owlPrompt').style.display='none';
+      this.activeOwl=null;
+    }
+  },
+
+  interact(){
+    const owl=this.activeOwl;
+    if(!owl)return;
+    document.getElementById('owlPrompt').style.display='none';
+    owl.state='flying';
+    owl.twx=400+Math.random()*(MW*TS-800);
+    owl.twy=150+Math.random()*(MH*TS-300);
+    owl.cooldown=Date.now()+180000+Math.random()*120000; // 3-5 min before hovering again
+    this.activeOwl=null;
+    this._deliver();
+  },
+
+  _deliver(){
+    const roll=Math.random();
+    if(roll<0.40)      this._giveLetter();
+    else if(roll<0.65) this._givePotion();
+    else if(roll<0.80) this._giveSpell();
+    else               this._giveMission();
+  },
+
+  _giveLetter(){
+    const letter=OWL_LETTERS[Math.floor(Math.random()*OWL_LETTERS.length)];
+    document.getElementById('owlSeal').textContent=letter.seal;
+    document.getElementById('owlLetterFrom').textContent='From: '+letter.from;
+    document.getElementById('owlLetterText').textContent=letter.text;
+    document.getElementById('owlModal').style.display='flex';
+    sfx('win');
+  },
+
+  _givePotion(){
+    const keys=Object.keys(ITEMS);
+    const key=keys[Math.floor(Math.random()*keys.length)];
+    const it=ITEMS[key];
+    P.inventory[key]=(P.inventory[key]||0)+1;
+    updateHUD();saveGame();
+    toast('🦉 The owl delivered: '+it.icon+' '+it.name+'!',4000);
+    sfx('win');
+  },
+
+  _giveSpell(){
+    const allSpells=Object.keys(SPELLS);
+    const unknown=allSpells.filter(k=>!P.spells.includes(k)&&(!SPELLS[k].house||SPELLS[k].house===({g:'g',s:'s',r:'r',h:'h'}[P.house]))&&P.level>=SPELLS[k].ml);
+    if(!unknown.length){this._giveLetter();return;}
+    const key=unknown[Math.floor(Math.random()*unknown.length)];
+    const sp=SPELLS[key];
+    P.spells.push(key);
+    saveGame();
+    toast('🦉 Scroll unrolled! Learned '+sp.icon+' '+sp.name+'!',5000);
+    sfx('lvl');
+  },
+
+  _giveMission(){
+    if(P.activeMission){this._givePotion();return;}
+    const m=OWL_MISSIONS[Math.floor(Math.random()*OWL_MISSIONS.length)];
+    P.activeMission={...m};
+    saveGame();
+    toast('🦉 Mission: '+m.icon+' '+m.title+' — '+m.desc,6000);
+    sfx('win');
+  },
+
+  checkMissionComplete(zoneId){
+    if(!P||!P.activeMission)return;
+    if(P.activeMission.zone!==zoneId)return;
+    const m=P.activeMission;
+    P.activeMission=null;
+    if(m.reward.gold){P.gold+=m.reward.gold;}
+    if(m.reward.xp){gainXP(m.reward.xp);}
+    updateHUD();saveGame();
+    toast('✅ Mission complete: '+m.icon+' '+m.title+'! +'+(m.reward.gold?m.reward.gold+'G ':'')+''+(m.reward.xp?m.reward.xp+'XP':''),5000);
+    sfx('lvl');
+  },
+
+  closeModal(){
+    document.getElementById('owlModal').style.display='none';
+  },
+};
+
 function updateNPCs(now){
   if(!MAP||!activeNPCs.length||now-lastNPCTime<90)return;
   lastNPCTime=now;
