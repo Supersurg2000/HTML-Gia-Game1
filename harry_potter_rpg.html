@@ -2187,6 +2187,60 @@ function initWorld(){
   enterMap();
 }
 
+// ── MISSION WAYPOINT ──────────────────────────────
+function drawMissionWaypoint(now){
+  if(!P||!P.activeMission)return;
+  const m=P.activeMission;
+  const z=ZONES.find(z=>z.id===m.zone);
+  if(!z)return;
+  // World-pixel centre of the target zone
+  const wzx=z.tx*TS+z.w*TS/2, wzy=z.ty*TS+z.h*TS/2;
+  // Screen position
+  const sx=wzx-camX, sy=wzy-camY;
+  const onScreen=sx>0&&sx<CW&&sy>0&&sy<CH;
+  const pulse=0.6+0.4*Math.sin(now*0.005);
+
+  wctx.save();
+  if(onScreen){
+    // Glowing ring on the zone
+    wctx.globalAlpha=pulse*0.55;
+    wctx.strokeStyle='#f0c040';wctx.lineWidth=3;
+    wctx.setLineDash([6,5]);
+    wctx.beginPath();wctx.arc(sx,sy,28,0,6.28);wctx.stroke();
+    wctx.setLineDash([]);
+    // Second inner ring
+    wctx.globalAlpha=pulse*0.35;
+    wctx.beginPath();wctx.arc(sx,sy,18,0,6.28);wctx.stroke();
+    wctx.globalAlpha=1;
+    // Mission icon + label
+    wctx.font='22px serif';wctx.textAlign='center';
+    wctx.fillText(m.icon,sx,sy-36);
+    wctx.font='bold 9px sans-serif';
+    wctx.fillStyle='rgba(0,0,0,.75)';wctx.fillRect(sx-30,sy-52,60,13);
+    wctx.fillStyle='#f0c040';wctx.fillText('MISSION',sx,sy-42);
+  }else{
+    // Off-screen compass arrow pointing toward the zone
+    const angle=Math.atan2(wzy-P.wy,wzx-P.wx);
+    const margin=28;
+    const arrowX=Math.min(CW-margin,Math.max(margin,CW/2+(Math.cos(angle)*(CW/2-margin))));
+    const arrowY=Math.min(CH-margin,Math.max(margin,CH/2+(Math.sin(angle)*(CH/2-margin))));
+    wctx.translate(arrowX,arrowY);wctx.rotate(angle);
+    wctx.globalAlpha=0.5+0.5*pulse;
+    // Arrow body
+    wctx.fillStyle='#f0c040';
+    wctx.beginPath();wctx.moveTo(18,0);wctx.lineTo(-8,-8);wctx.lineTo(-4,0);wctx.lineTo(-8,8);wctx.closePath();wctx.fill();
+    // Glow outline
+    wctx.strokeStyle='#ffffff';wctx.lineWidth=1;wctx.stroke();
+    wctx.globalAlpha=1;
+    wctx.rotate(-angle);
+    // Mission icon above arrow
+    wctx.font='14px serif';wctx.textAlign='center';
+    wctx.fillText(m.icon,0,-18);
+  }
+  wctx.restore();
+  wctx.textAlign='left';
+}
+
 // ── MAIN LOOP ─────────────────────────────────────
 function loop(now){
   requestAnimationFrame(loop);
@@ -2229,6 +2283,7 @@ function loop(now){
 
   updateParts();drawParts();
   drawDayNight(now);
+  drawMissionWaypoint(now);
   drawMinimap();
 }
 
