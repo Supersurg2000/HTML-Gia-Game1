@@ -1993,14 +1993,16 @@ const G={
     // Mission panel
     const mm=document.getElementById('menuMission');
     const m=P.activeMission;
+    mm.style.display='block';
     if(m){
-      mm.style.display='block';
       document.getElementById('menuMissionTitle').textContent=m.icon+' '+m.title;
       document.getElementById('menuMissionDesc').textContent=m.desc;
       const rParts=[];if(m.reward.gold)rParts.push('+'+m.reward.gold+'G');if(m.reward.xp)rParts.push('+'+m.reward.xp+' XP');
       document.getElementById('menuMissionReward').textContent='Reward: '+rParts.join(' · ')+' — Travel to '+m.zone;
     }else{
-      mm.style.display='none';
+      document.getElementById('menuMissionTitle').textContent='No mission active';
+      document.getElementById('menuMissionDesc').textContent='Keep an eye out for owls flying overhead — approach one when it hovers and it may bring you a mission.';
+      document.getElementById('menuMissionReward').textContent='';
     }
   },
   closeMenu:function(){document.getElementById('pauseScr').classList.add('off');gameState='map';isBusy=false;},
