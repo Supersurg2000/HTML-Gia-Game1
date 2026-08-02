@@ -2195,43 +2195,76 @@ function initWorld(){
 
 // ── MISSION WAYPOINT ──────────────────────────────
 function drawMissionWaypoint(now){
-  if(!P||!P.activeMissions||!P.activeMissions.length)return;
-  const pulse=0.6+0.4*Math.sin(now*0.005);
-  P.activeMissions.forEach((m,idx)=>{
-    const z=ZONES.find(z=>z.id===m.zone);
+  // support both old single-mission saves and new array format
+  if(!P)return;
+  const missions=P.activeMissions&&P.activeMissions.length?P.activeMissions
+    :(P.activeMission?[P.activeMission]:[]);
+  if(!missions.length)return;
+
+  const pulse=0.55+0.45*Math.sin(now*0.004);
+  const bounce=Math.abs(Math.sin(now*0.004))*10; // arrow bounces
+  wctx.textAlign='center';
+
+  missions.forEach((m,idx)=>{
+    const z=ZONES.find(zn=>zn.id===m.zone);
     if(!z)return;
     const wzx=z.tx*TS+z.w*TS/2, wzy=z.ty*TS+z.h*TS/2;
     const sx=wzx-camX, sy=wzy-camY;
-    const onScreen=sx>0&&sx<CW&&sy>0&&sy<CH;
+    const pad=40;
+    const onScreen=sx>pad&&sx<CW-pad&&sy>pad&&sy<CH-pad;
+
     wctx.save();
     if(onScreen){
-      wctx.globalAlpha=pulse*0.55;
-      wctx.strokeStyle='#f0c040';wctx.lineWidth=3;
-      wctx.setLineDash([6,5]);
-      wctx.beginPath();wctx.arc(sx,sy,28,0,6.28);wctx.stroke();
-      wctx.setLineDash([]);
-      wctx.globalAlpha=pulse*0.3;
-      wctx.beginPath();wctx.arc(sx,sy,18,0,6.28);wctx.stroke();
+      // Outer glow ring
+      wctx.globalAlpha=pulse*0.4;
+      wctx.strokeStyle='#f0c040';wctx.lineWidth=5;
+      wctx.beginPath();wctx.arc(sx,sy,44,0,6.28);wctx.stroke();
+      // Inner dashed ring
+      wctx.lineWidth=2.5;wctx.setLineDash([7,5]);
+      wctx.beginPath();wctx.arc(sx,sy,30,0,6.28);wctx.stroke();
+      wctx.setLineDash([]);wctx.globalAlpha=1;
+      // Vertical beacon beam
+      wctx.globalAlpha=pulse*0.25;
+      const grad=wctx.createLinearGradient(sx,sy-80,sx,sy);
+      grad.addColorStop(0,'rgba(240,192,64,0)');grad.addColorStop(1,'rgba(240,192,64,0.9)');
+      wctx.fillStyle=grad;wctx.fillRect(sx-6,sy-80,12,80);
       wctx.globalAlpha=1;
-      wctx.font='22px serif';wctx.textAlign='center';
-      wctx.fillText(m.icon,sx,sy-36);
-      wctx.font='bold 9px sans-serif';
-      wctx.fillStyle='rgba(0,0,0,.75)';wctx.fillRect(sx-30,sy-52,60,13);
-      wctx.fillStyle='#f0c040';wctx.fillText('MISSION',sx,sy-42);
+      // Mission icon (large)
+      wctx.font='28px serif';wctx.fillText(m.icon,sx,sy-50+bounce*.3);
+      // Banner with zone name
+      const label=m.title;
+      wctx.font='bold 10px sans-serif';
+      const lw=wctx.measureText(label).width+14;
+      wctx.fillStyle='rgba(0,0,0,.85)';
+      wctx.beginPath();wctx.roundRect?wctx.roundRect(sx-lw/2,sy-82,lw,16,4):wctx.fillRect(sx-lw/2,sy-82,lw,16);
+      wctx.fill();
+      wctx.fillStyle='#f0c040';wctx.fillText(label,sx,sy-70);
     }else{
+      // Off-screen: large bouncing arrow on screen edge
       const angle=Math.atan2(wzy-P.wy,wzx-P.wx);
-      const margin=28+idx*22;
-      const arrowX=Math.min(CW-margin,Math.max(margin,CW/2+Math.cos(angle)*(CW/2-margin)));
-      const arrowY=Math.min(CH-margin,Math.max(margin,CH/2+Math.sin(angle)*(CH/2-margin)));
-      wctx.translate(arrowX,arrowY);wctx.rotate(angle);
-      wctx.globalAlpha=0.5+0.5*pulse;
+      const edgeMargin=48+idx*26;
+      const clampX=Math.min(CW-edgeMargin,Math.max(edgeMargin,CW/2+Math.cos(angle)*(CW/2)));
+      const clampY=Math.min(CH-edgeMargin,Math.max(edgeMargin,CH/2+Math.sin(angle)*(CH/2)));
+      wctx.translate(clampX,clampY);
+      // Background circle
+      wctx.globalAlpha=0.82;
+      wctx.fillStyle='rgba(0,0,0,.7)';
+      wctx.beginPath();wctx.arc(0,0,22,0,6.28);wctx.fill();
+      wctx.strokeStyle='#f0c040';wctx.lineWidth=2;
+      wctx.beginPath();wctx.arc(0,0,22,0,6.28);wctx.stroke();
+      // Arrow pointing toward zone
+      wctx.rotate(angle);
+      wctx.translate(bounce*.4,0); // bounce toward target
       wctx.fillStyle='#f0c040';
-      wctx.beginPath();wctx.moveTo(18,0);wctx.lineTo(-8,-8);wctx.lineTo(-4,0);wctx.lineTo(-8,8);wctx.closePath();wctx.fill();
-      wctx.strokeStyle='#ffffff';wctx.lineWidth=1;wctx.stroke();
+      wctx.beginPath();wctx.moveTo(14,0);wctx.lineTo(-7,-7);wctx.lineTo(-3,0);wctx.lineTo(-7,7);wctx.closePath();wctx.fill();
+      wctx.strokeStyle='#fff8';wctx.lineWidth=1;wctx.stroke();
+      wctx.rotate(-angle);wctx.translate(-bounce*.4,0);
       wctx.globalAlpha=1;
-      wctx.rotate(-angle);
-      wctx.font='14px serif';wctx.textAlign='center';
-      wctx.fillText(m.icon,0,-18);
+      // Mission icon above the circle
+      wctx.font='16px serif';wctx.fillText(m.icon,0,-32);
+      // Zone label below
+      wctx.font='bold 8px sans-serif';
+      wctx.fillStyle='#f0c040';wctx.fillText(m.zone.toUpperCase(),0,36);
     }
     wctx.restore();
   });
