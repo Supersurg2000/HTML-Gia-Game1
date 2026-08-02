@@ -362,6 +362,12 @@ canvas{display:block}
       </div>
     </div>
     <div id="menuPerks" style="padding:7px 18px 9px;font-size:10px;color:var(--muted);border-top:1px solid #ffffff0a;min-height:24px;line-height:1.9"></div>
+    <div id="menuMission" style="display:none;padding:9px 18px 10px;border-top:1px solid #c4782033;background:rgba(20,10,5,.55)">
+      <div style="font-size:9px;color:#c47820;letter-spacing:.8px;margin-bottom:5px">📬 ACTIVE OWL MISSION</div>
+      <div id="menuMissionTitle" style="font-size:11px;color:#f0c040;font-weight:700;margin-bottom:4px"></div>
+      <div id="menuMissionDesc" style="font-size:10px;color:var(--text);line-height:1.6;margin-bottom:5px"></div>
+      <div id="menuMissionReward" style="font-size:9px;color:#88cc88;font-style:italic"></div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px;border-top:1px solid var(--border);background:rgba(5,2,16,.6)">
       <button class="btn" style="font-size:11px;padding:10px 4px" onclick="G.openLoadout()">⚔️ Skills</button>
       <button class="btn" style="font-size:11px;padding:10px 4px;background:#1a2a44" onclick="G.openBag()">🎒 Bag</button>
@@ -1984,6 +1990,18 @@ const G={
     const perks=P.perks||[];
     document.getElementById('menuPerks').innerHTML=perks.length?
       '⚡ <span style="color:var(--gold);letter-spacing:.5px">PERKS:</span> '+perks.map(k=>{const pd=PERKS[k];return pd?'<span style="background:rgba(201,162,39,.1);border:1px solid var(--gold);border-radius:8px;padding:1px 7px;margin-right:3px;font-size:9px">'+pd.icon+' '+pd.name+'</span>':''}).join(''):'<span style="opacity:.5">No perks yet — challenge NPCs to earn them!</span>';
+    // Mission panel
+    const mm=document.getElementById('menuMission');
+    const m=P.activeMission;
+    if(m){
+      mm.style.display='block';
+      document.getElementById('menuMissionTitle').textContent=m.icon+' '+m.title;
+      document.getElementById('menuMissionDesc').textContent=m.desc;
+      const rParts=[];if(m.reward.gold)rParts.push('+'+m.reward.gold+'G');if(m.reward.xp)rParts.push('+'+m.reward.xp+' XP');
+      document.getElementById('menuMissionReward').textContent='Reward: '+rParts.join(' · ')+' — Travel to '+m.zone;
+    }else{
+      mm.style.display='none';
+    }
   },
   closeMenu:function(){document.getElementById('pauseScr').classList.add('off');gameState='map';isBusy=false;},
   togglePad:function(){const d=document.getElementById('dpad'),b=document.getElementById('gamebtns'),on=d.style.display==='block';d.style.display=on?'none':'block';b.style.display=on?'none':'block';document.getElementById('padToggleBtn').style.opacity=on?'.5':'1';},
