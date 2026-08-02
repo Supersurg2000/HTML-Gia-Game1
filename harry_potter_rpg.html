@@ -299,6 +299,32 @@ canvas{display:block}
       <button class="btn sm grn" id="btnItem" onclick="B.openBattleBag()">🎒 Bag</button>
       <button class="btn sm red" onclick="B.flee()">🏃 Flee</button>
     </div>
+    <!-- Power charge bar -->
+    <div id="castOverlay" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(0,0,0,.86);flex-direction:column;align-items:center;justify-content:center;border-radius:10px">
+      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">⚡ Charge your spell!</div>
+      <div id="castSpellName" style="color:#aaa;font-size:12px;margin-bottom:14px"></div>
+      <div id="powerBarTrack" onclick="B.lockPower()" style="width:82%;height:44px;border-radius:8px;position:relative;overflow:hidden;cursor:pointer;border:2px solid #f0c040;background:linear-gradient(90deg,#661111 0%,#884400 17%,#886600 33%,#226633 45%,#226633 55%,#886600 67%,#884400 83%,#661111 100%)">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-around;padding:0 4%;pointer-events:none">
+          <span style="font-size:8px;color:#ff8888;font-weight:700;opacity:.8">WEAK</span>
+          <span style="font-size:8px;color:#ffcc44;font-weight:700;opacity:.8">GREAT</span>
+          <span style="font-size:9px;color:#44ff88;font-weight:700">PERFECT</span>
+          <span style="font-size:8px;color:#ffcc44;font-weight:700;opacity:.8">GREAT</span>
+          <span style="font-size:8px;color:#ff8888;font-weight:700;opacity:.8">WEAK</span>
+        </div>
+        <div id="powerBarCursor" style="position:absolute;top:2px;bottom:2px;width:8px;background:#fff;border-radius:4px;box-shadow:0 0 12px #fff8;left:46%"></div>
+      </div>
+      <div id="castLabel" style="margin-top:12px;font-size:20px;font-weight:700;min-height:28px;color:#f0c040"></div>
+      <div style="margin-top:4px;font-size:10px;color:#666">Tap the bar — or press Space</div>
+    </div>
+    <!-- Block window -->
+    <div id="blockOverlay" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(0,0,0,.78);flex-direction:column;align-items:center;justify-content:center;border-radius:10px">
+      <div style="font-size:12px;color:#ff8888;font-family:'Cinzel',serif;margin-bottom:10px">⚠️ Incoming attack!</div>
+      <button id="blockBtn" onclick="B.tryBlock()" style="font-size:20px;padding:16px 36px;background:linear-gradient(135deg,#0d1f44,#1a3388);border:2px solid #4477ff;border-radius:12px;color:#aaccff;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:1px;box-shadow:0 0 24px #4477ff55;transition:transform .1s" onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform=''">🛡️ BLOCK!</button>
+      <div style="margin-top:14px;width:180px;height:10px;background:#1a1a2e;border-radius:5px;overflow:hidden;border:1px solid #333">
+        <div id="blockTimerFill" style="height:100%;background:linear-gradient(90deg,#3366ff,#66aaff);border-radius:5px;width:100%"></div>
+      </div>
+      <div style="margin-top:6px;font-size:10px;color:#555">Press BLOCK to halve damage</div>
+    </div>
     <div id="battleBagPanel" style="display:none;position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(5,2,16,.97),rgba(10,5,25,1));border-top:2px solid var(--border);padding:12px 16px;border-radius:0 0 10px 10px;z-index:5">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <span style="font-family:'Cinzel Decorative',serif;font-size:12px;color:var(--gold);letter-spacing:1px">🎒 BAG</span>
@@ -1027,7 +1053,7 @@ window.addEventListener('resize',()=>{CW=wc.width=window.innerWidth;CH=wc.height
 
 // ── INPUT ────────────────────────────────────────
 const keys={};
-window.addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)&&document.activeElement.tagName!=='INPUT')e.preventDefault();if(e.key==='Escape'){if(gameState==='map')G.openMenu();else if(gameState==='menu')G.closeMenu();else if(gameState==='loadout')G.closeLoadout();else if(gameState==='bag')G.closeBag();}});
+window.addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)&&document.activeElement.tagName!=='INPUT')e.preventDefault();if(e.key===' '||e.key==='Enter'){if(document.getElementById('castOverlay').style.display==='flex'){B.lockPower();return;}if(document.getElementById('blockOverlay').style.display==='flex'){B.tryBlock();return;}}if(e.key==='Escape'){if(gameState==='map')G.openMenu();else if(gameState==='menu')G.closeMenu();else if(gameState==='loadout')G.closeLoadout();else if(gameState==='bag')G.closeBag();}});
 window.addEventListener('keyup',e=>{delete keys[e.key];});
 ['dpU','dpL','dpR','dpD'].forEach(id=>{
   const el=document.getElementById(id);
@@ -1558,6 +1584,8 @@ function tickFX(){
 }
 
 const B={
+  _pendingSpell:null,_powerPos:0.5,_powerRaf:null,_castStart:0,_castSpeed:1.5,_blockPressed:false,_blockTimeout:null,
+
   cast:function(sk){
     if(!BS||btlBusy)return;
     const sp=SPELLS[sk];
@@ -1565,9 +1593,48 @@ const B={
     if(!sp||P.mp<manaCost){toast('Not enough mana!');return;}
     if(!AC)initAudio();
     btlBusy=true;lockBtl(true);P.mp-=manaCost;sfx('spell');
+    // Instant spells — skip power bar
     if(sp.effect==='shield'){BS.playerShield=true;addLog('🛡️ Protego! Shield activated.','lp');sfx('buff');updateHUD();setTimeout(function(){enemyTurn();},700);return;}
     if(sp.effect==='natureheal'){const h=Math.min(P.maxHp-P.hp,28+P.level*4);P.hp+=h;addLog('🌿 Nature\'s Gift! +'+h+' HP','lh');sfx('heal');updateHUD();renderBattle();setTimeout(function(){if(chkEnd())return;enemyTurn();},700);return;}
+    // Show power charge bar
+    this._pendingSpell=sk;
+    this._castStart=performance.now();
+    this._castSpeed=1.3+(BS.enemy.boss?.6:0)+Math.random()*.5;
+    document.getElementById('castSpellName').textContent=sp.icon+' '+sp.name;
+    document.getElementById('castLabel').textContent='';
+    document.getElementById('castOverlay').style.display='flex';
+    this._animPower();
+    // Auto-fire after 2.2s if player doesn't tap
+    this._autoFireT=setTimeout(()=>this.lockPower(),2200);
+  },
+
+  _animPower:function(){
+    const t=(performance.now()-this._castStart)/1000*this._castSpeed;
+    const pos=(Math.sin(t*Math.PI*2)+1)/2;
+    this._powerPos=pos;
+    const cur=document.getElementById('powerBarCursor');
+    if(cur)cur.style.left=Math.min(92,pos*92)+'%';
+    this._powerRaf=requestAnimationFrame(()=>this._animPower());
+  },
+
+  lockPower:function(){
+    clearTimeout(this._autoFireT);cancelAnimationFrame(this._powerRaf);
+    const pos=this._powerPos;
+    const d=Math.abs(pos-0.5)*2;
+    let mult,label;
+    if(d<0.12){mult=1.75;label='⚡ PERFECT! ×1.75';}
+    else if(d<0.32){mult=1.25;label='✨ GREAT! ×1.25';}
+    else if(d<0.58){mult=1.0;label='👍 GOOD ×1.0';}
+    else{mult=0.55;label='💨 WEAK ×0.55';}
+    document.getElementById('castLabel').textContent=label;
+    sfx(mult>=1.75?'lvl':mult>=1.25?'buff':'spell');
+    setTimeout(()=>{document.getElementById('castOverlay').style.display='none';this._execCast(this._pendingSpell,mult);},520);
+  },
+
+  _execCast:function(sk,mult){
+    const sp=SPELLS[sk];
     let dmg=sp.dmg[0]+Math.floor(Math.random()*(sp.dmg[1]-sp.dmg[0]+1));
+    dmg=Math.floor(dmg*mult);
     const hb=HOUSES[P.house].bonuses;
     if(hb.dmgPct)dmg=Math.floor(dmg*(1+hb.dmgPct));
     dmg=Math.floor(dmg*(1+P.level*.04));
@@ -1582,7 +1649,8 @@ const B={
     const defPen=P.perks.includes('true_sight')?.3:.4;
     dmg=Math.max(1,dmg-Math.floor(Math.max(0,BS.enemy.def-BS.enemy.atkDeb)*defPen));
     BS.enemy.curHp=Math.max(0,BS.enemy.curHp-dmg);
-    addLog('✨ '+sp.name+'! '+dmg+' damage'+(crit?' (CRIT)':'')+'!','lp');if(crit){note(2200,.03,'square',.16);setTimeout(()=>sfx('spellImpact'),25);}else{sfx('spellImpact');}
+    addLog('✨ '+sp.name+'! '+dmg+' dmg'+(mult>=1.75?' ⚡PERFECT':mult>=1.25?' ✨GREAT':'')+(crit?' 💥CRIT':'')+'!','lp');
+    if(crit){note(2200,.03,'square',.16);setTimeout(()=>sfx('spellImpact'),25);}else sfx('spellImpact');
     const ep=document.getElementById('eport');ep.classList.remove('shake');void ep.offsetWidth;ep.classList.add('shake');
     if(sp.effect==='stun'&&Math.random()<.6)applyFX({type:'stun',turns:1});
     if(sp.effect==='burn')applyFX({type:'burn',turns:3,dmg:Math.floor(dmg*.25)});
@@ -1591,7 +1659,14 @@ const B={
     if(sp.effect==='steal'){BS.enemy.atkDeb=Math.floor(BS.enemy.atk*.3);addLog('🎯 Enemy attack reduced!','ls');setTimeout(()=>sfx('buff'),200);}
     if(sp.effect==='drain'){const d=Math.floor(dmg*.45);P.hp=Math.min(P.maxHp,P.hp+d);addLog('🩸 Life drained! +'+d+' HP','ls');setTimeout(()=>sfx('heal'),200);}
     updateHUD();renderBattle();
-    setTimeout(function(){if(chkEnd())return;enemyTurn();},700);
+    setTimeout(function(){if(chkEnd())return;enemyTurn();},600);
+  },
+
+  tryBlock:function(){
+    if(!BS||this._blockPressed)return;
+    this._blockPressed=true;
+    document.getElementById('blockOverlay').style.display='none';
+    addLog('🛡️ Bracing for impact!','ls');sfx('buff');
   },
   openBattleBag:function(){
     if(!BS||btlBusy)return;
@@ -1676,7 +1751,15 @@ function enemyTurn(){
   if(chkEnd())return;
   const stunned=tickFX();renderBattle();if(chkEnd())return;
   if(stunned){updateHUD();btlBusy=false;lockBtl(false);return;}
+  // Show block window
+  const blockMs=750;
+  B._blockPressed=false;
+  const bOverlay=document.getElementById('blockOverlay');
+  const bFill=document.getElementById('blockTimerFill');
+  bOverlay.style.display='flex';
+  if(bFill){bFill.style.transition='none';bFill.style.width='100%';void bFill.offsetWidth;bFill.style.transition='width '+blockMs+'ms linear';bFill.style.width='0%';}
   setTimeout(function(){
+    bOverlay.style.display='none';
     const e=BS.enemy,atk=e.atks[Math.floor(Math.random()*e.atks.length)];
     const pDef=P.def+(P.perks.includes('cold_blood')?10:0);
     let dmg=Math.max(3,Math.floor(e.atk*(.8+Math.random()*.5))-Math.floor(pDef*.35));
@@ -1700,13 +1783,14 @@ function enemyTurn(){
       default:addLog('⚡ '+e.name+' attacks!','le_');
     }
     if(!skip){
+      if(B._blockPressed){const bl=Math.floor(dmg*.5);dmg=Math.max(0,dmg-bl);addLog('🛡️ Blocked! −'+bl+' damage!','ls');}
       if(BS.playerShield){const bl=Math.floor(dmg*.6);dmg-=bl;BS.playerShield=false;addLog('🛡️ Protego blocks '+bl+'!','ls');}
       if(dmg>0){P.hp=Math.max(0,P.hp-dmg);addLog('💔 '+dmg+' damage! ('+P.hp+'/'+P.maxHp+')',P.hp<P.maxHp*.25?'ld':'le_');sfx('takeDmg');}
     }
     if(P.perks.includes('regen_spirit')&&P.hp>0&&P.hp<P.maxHp*.3){const rg=8;P.hp=Math.min(P.maxHp,P.hp+rg);addLog('💚 Regen Spirit: +'+rg+' HP','lh');}
     updateHUD();renderBattle();if(chkEnd())return;
     btlBusy=false;lockBtl(false);
-  },600);
+  },blockMs);
 }
 
 function chkEnd(){
