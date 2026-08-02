@@ -174,6 +174,13 @@ canvas{display:block}
 <div id="zprompt">
   <h3 id="zpname">Location</h3>
   <p id="zpdesc">Enter?</p>
+  <div id="zpMission" style="display:none;margin-bottom:10px;padding:8px 10px;background:rgba(196,120,32,.15);border:1px solid #c47820;border-radius:6px;text-align:left">
+    <div style="font-size:9px;color:#c47820;letter-spacing:.7px;margin-bottom:3px">📬 ACTIVE MISSION HERE</div>
+    <div id="zpMissionTitle" style="font-size:11px;color:#f0c040;font-weight:700;margin-bottom:2px"></div>
+    <div id="zpMissionDesc" style="font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:4px"></div>
+    <div id="zpMissionReward" style="font-size:9px;color:#88cc88"></div>
+  </div>
+  <button class="zbtn" id="zpMissionBtn" style="display:none;background:linear-gradient(135deg,#5a3000,#8b5000);border-color:#c47820;margin-bottom:6px" onclick="OWLS.completeMissionPrompt()">✅ Complete Mission</button>
   <button class="zbtn" id="zpyes" onclick="G.enterZone()">Enter</button>
   <button class="zbtn no" onclick="G.closePrompt()">Back</button>
 </div>
@@ -1436,6 +1443,21 @@ function showZonePrompt(z){
   document.getElementById('zpname').textContent=z.icon+' '+z.name;
   document.getElementById('zpdesc').textContent=locked?'Requires Year '+z.lockYear+' (you are Year '+P.year+').':z.desc;
   document.getElementById('zpyes').disabled=!!locked;
+  // Mission panel
+  const missions=P.activeMissions&&P.activeMissions.length?P.activeMissions:(P.activeMission?[P.activeMission]:[]);
+  const zm=missions.find(m=>m.zone===z.id);
+  const mPanel=document.getElementById('zpMission');
+  const mBtn=document.getElementById('zpMissionBtn');
+  if(zm){
+    document.getElementById('zpMissionTitle').textContent=zm.icon+' '+zm.title;
+    document.getElementById('zpMissionDesc').textContent=zm.desc;
+    const rp=[];if(zm.reward.gold)rp.push('+'+zm.reward.gold+'G');if(zm.reward.xp)rp.push('+'+zm.reward.xp+' XP');
+    document.getElementById('zpMissionReward').textContent='Reward: '+rp.join(' · ');
+    mPanel.style.display='block';mBtn.style.display='block';
+    mBtn._missionZone=z.id;
+  }else{
+    mPanel.style.display='none';mBtn.style.display='none';
+  }
   el.style.display='block';
   syncToast();
 }
@@ -1444,7 +1466,6 @@ function showZonePrompt(z){
 function enterZone(){
   const z=promptZone;if(!z)return;
   document.getElementById('zprompt').style.display='none';
-  OWLS.checkMissionComplete(z.id);
   if(z.safe){P.hp=P.maxHp;P.mp=P.maxMp;P.status=[];sfx('heal');spawnParts('#44dd88',20,CW/2,CH/2);toast('Fully restored!');updateHUD();saveGame();return;}
   if(z.shop){G.showShop();return;}
   if(z.dorm){G.showDorm();return;}
@@ -2750,15 +2771,25 @@ const OWLS={
   },
 
   checkMissionComplete(zoneId){
-    if(!P||!P.activeMissions||!P.activeMissions.length)return;
-    const idx=P.activeMissions.findIndex(m=>m.zone===zoneId);
+    if(!P)return;
+    const missions=P.activeMissions||[];
+    const idx=missions.findIndex(m=>m.zone===zoneId);
     if(idx===-1)return;
-    const m=P.activeMissions.splice(idx,1)[0];
+    const m=missions.splice(idx,1)[0];
     if(m.reward.gold)P.gold+=m.reward.gold;
     if(m.reward.xp)gainXP(m.reward.xp);
     updateHUD();saveGame();
+    spawnParts('#f0c040',22,CW/2,CH/2);
     toast('✅ Mission complete: '+m.icon+' '+m.title+'! +'+(m.reward.gold?m.reward.gold+'G ':'')+''+(m.reward.xp?m.reward.xp+' XP':''),5000);
     sfx('lvl');
+    // Refresh zone prompt without mission button
+    if(promptZone)showZonePrompt(promptZone);
+  },
+
+  completeMissionPrompt(){
+    const btn=document.getElementById('zpMissionBtn');
+    const zoneId=btn._missionZone;
+    if(zoneId)this.checkMissionComplete(zoneId);
   },
 
   closeModal(){
