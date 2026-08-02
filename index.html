@@ -1006,7 +1006,7 @@ function mkPlayer(name,house,gender){
     hp:0,mp:0,atk:18,def:8,crit:(h.bonuses.critChance||.05),
     spells:['lumos','expelliarmus','stupefy'],
     inventory:{wiggenweld:2},status:[],defeatedBosses:[],
-    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],activeMission:null,wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
+    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],activeMissions:[],wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
   pl.hp=pl.maxHp;pl.mp=pl.maxMp;
   if(house==='h')pl.inventory.wiggenweld=(pl.inventory.wiggenweld||0)+3;
   return pl;
@@ -1342,7 +1342,8 @@ function updateHUD(){
   document.getElementById('bhp').style.width=hp+'%';document.getElementById('bmp').style.width=mp+'%';document.getElementById('bxp').style.width=xp+'%';
   document.getElementById('vhp').textContent=P.hp+'/'+P.maxHp;document.getElementById('vmp').textContent=P.mp+'/'+P.maxMp;document.getElementById('vxp').textContent=P.xp+'/'+P.xpToNext;
   const mEl=document.getElementById('hmission');
-  if(P.activeMission){mEl.style.display='block';mEl.textContent='📬 '+P.activeMission.icon+' '+P.activeMission.title;}
+  const ms=P.activeMissions||[];
+  if(ms.length){mEl.style.display='block';mEl.textContent='📬 '+ms.length+' mission'+(ms.length>1?'s':'')+': '+ms.map(m=>m.icon+' '+m.title).join(' · ');}
   else{mEl.style.display='none';}
 }
 
@@ -1770,7 +1771,7 @@ function setActiveSlot(n){localStorage.setItem('hpa2_active',String(n));}
 function getSlotData(n){const r=localStorage.getItem(slotKey(n));return r?JSON.parse(r):null;}
 function migrateOldSave(){const old=localStorage.getItem('hpa2');if(!old)return;try{const p=JSON.parse(old);if(!getSlotData(1))localStorage.setItem(slotKey(1),JSON.stringify({player:p,savedAt:Date.now()}));}catch(e){}localStorage.removeItem('hpa2');}
 function sanitizePlayer(p){
-  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};if(p.activeMission===undefined)p.activeMission=null;
+  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};if(!p.activeMissions){p.activeMissions=p.activeMission?[p.activeMission]:[];}delete p.activeMission;
   // Rebuild equippedSpells
   if(!p.equippedSpells||!p.equippedSpells.length)p.equippedSpells=p.spells.slice(0,6);
   p.equippedSpells=p.equippedSpells.filter(function(k){return p.spells.includes(k);});
@@ -1992,15 +1993,20 @@ const G={
       '⚡ <span style="color:var(--gold);letter-spacing:.5px">PERKS:</span> '+perks.map(k=>{const pd=PERKS[k];return pd?'<span style="background:rgba(201,162,39,.1);border:1px solid var(--gold);border-radius:8px;padding:1px 7px;margin-right:3px;font-size:9px">'+pd.icon+' '+pd.name+'</span>':''}).join(''):'<span style="opacity:.5">No perks yet — challenge NPCs to earn them!</span>';
     // Mission panel
     const mm=document.getElementById('menuMission');
-    const m=P.activeMission;
+    const ms=P.activeMissions||[];
     mm.style.display='block';
-    if(m){
-      document.getElementById('menuMissionTitle').textContent=m.icon+' '+m.title;
-      document.getElementById('menuMissionDesc').textContent=m.desc;
-      const rParts=[];if(m.reward.gold)rParts.push('+'+m.reward.gold+'G');if(m.reward.xp)rParts.push('+'+m.reward.xp+' XP');
-      document.getElementById('menuMissionReward').textContent='Reward: '+rParts.join(' · ')+' — Travel to '+m.zone;
+    if(ms.length){
+      document.getElementById('menuMissionTitle').textContent=ms.length+' Active Mission'+(ms.length>1?'s':'');
+      document.getElementById('menuMissionDesc').innerHTML=ms.map(m=>{
+        const rParts=[];if(m.reward.gold)rParts.push('+'+m.reward.gold+'G');if(m.reward.xp)rParts.push('+'+m.reward.xp+' XP');
+        return '<div style="border-top:1px solid #c4782033;padding-top:5px;margin-top:5px">'+
+          '<span style="color:#f0c040;font-weight:700">'+m.icon+' '+m.title+'</span><br>'+
+          m.desc+'<br>'+
+          '<span style="color:#88cc88;font-size:9px">'+rParts.join(' · ')+' — go to '+m.zone+'</span></div>';
+      }).join('');
+      document.getElementById('menuMissionReward').textContent='';
     }else{
-      document.getElementById('menuMissionTitle').textContent='No mission active';
+      document.getElementById('menuMissionTitle').textContent='No missions active';
       document.getElementById('menuMissionDesc').textContent='Keep an eye out for owls flying overhead — approach one when it hovers and it may bring you a mission.';
       document.getElementById('menuMissionReward').textContent='';
     }
@@ -2189,55 +2195,46 @@ function initWorld(){
 
 // ── MISSION WAYPOINT ──────────────────────────────
 function drawMissionWaypoint(now){
-  if(!P||!P.activeMission)return;
-  const m=P.activeMission;
-  const z=ZONES.find(z=>z.id===m.zone);
-  if(!z)return;
-  // World-pixel centre of the target zone
-  const wzx=z.tx*TS+z.w*TS/2, wzy=z.ty*TS+z.h*TS/2;
-  // Screen position
-  const sx=wzx-camX, sy=wzy-camY;
-  const onScreen=sx>0&&sx<CW&&sy>0&&sy<CH;
+  if(!P||!P.activeMissions||!P.activeMissions.length)return;
   const pulse=0.6+0.4*Math.sin(now*0.005);
-
-  wctx.save();
-  if(onScreen){
-    // Glowing ring on the zone
-    wctx.globalAlpha=pulse*0.55;
-    wctx.strokeStyle='#f0c040';wctx.lineWidth=3;
-    wctx.setLineDash([6,5]);
-    wctx.beginPath();wctx.arc(sx,sy,28,0,6.28);wctx.stroke();
-    wctx.setLineDash([]);
-    // Second inner ring
-    wctx.globalAlpha=pulse*0.35;
-    wctx.beginPath();wctx.arc(sx,sy,18,0,6.28);wctx.stroke();
-    wctx.globalAlpha=1;
-    // Mission icon + label
-    wctx.font='22px serif';wctx.textAlign='center';
-    wctx.fillText(m.icon,sx,sy-36);
-    wctx.font='bold 9px sans-serif';
-    wctx.fillStyle='rgba(0,0,0,.75)';wctx.fillRect(sx-30,sy-52,60,13);
-    wctx.fillStyle='#f0c040';wctx.fillText('MISSION',sx,sy-42);
-  }else{
-    // Off-screen compass arrow pointing toward the zone
-    const angle=Math.atan2(wzy-P.wy,wzx-P.wx);
-    const margin=28;
-    const arrowX=Math.min(CW-margin,Math.max(margin,CW/2+(Math.cos(angle)*(CW/2-margin))));
-    const arrowY=Math.min(CH-margin,Math.max(margin,CH/2+(Math.sin(angle)*(CH/2-margin))));
-    wctx.translate(arrowX,arrowY);wctx.rotate(angle);
-    wctx.globalAlpha=0.5+0.5*pulse;
-    // Arrow body
-    wctx.fillStyle='#f0c040';
-    wctx.beginPath();wctx.moveTo(18,0);wctx.lineTo(-8,-8);wctx.lineTo(-4,0);wctx.lineTo(-8,8);wctx.closePath();wctx.fill();
-    // Glow outline
-    wctx.strokeStyle='#ffffff';wctx.lineWidth=1;wctx.stroke();
-    wctx.globalAlpha=1;
-    wctx.rotate(-angle);
-    // Mission icon above arrow
-    wctx.font='14px serif';wctx.textAlign='center';
-    wctx.fillText(m.icon,0,-18);
-  }
-  wctx.restore();
+  P.activeMissions.forEach((m,idx)=>{
+    const z=ZONES.find(z=>z.id===m.zone);
+    if(!z)return;
+    const wzx=z.tx*TS+z.w*TS/2, wzy=z.ty*TS+z.h*TS/2;
+    const sx=wzx-camX, sy=wzy-camY;
+    const onScreen=sx>0&&sx<CW&&sy>0&&sy<CH;
+    wctx.save();
+    if(onScreen){
+      wctx.globalAlpha=pulse*0.55;
+      wctx.strokeStyle='#f0c040';wctx.lineWidth=3;
+      wctx.setLineDash([6,5]);
+      wctx.beginPath();wctx.arc(sx,sy,28,0,6.28);wctx.stroke();
+      wctx.setLineDash([]);
+      wctx.globalAlpha=pulse*0.3;
+      wctx.beginPath();wctx.arc(sx,sy,18,0,6.28);wctx.stroke();
+      wctx.globalAlpha=1;
+      wctx.font='22px serif';wctx.textAlign='center';
+      wctx.fillText(m.icon,sx,sy-36);
+      wctx.font='bold 9px sans-serif';
+      wctx.fillStyle='rgba(0,0,0,.75)';wctx.fillRect(sx-30,sy-52,60,13);
+      wctx.fillStyle='#f0c040';wctx.fillText('MISSION',sx,sy-42);
+    }else{
+      const angle=Math.atan2(wzy-P.wy,wzx-P.wx);
+      const margin=28+idx*22;
+      const arrowX=Math.min(CW-margin,Math.max(margin,CW/2+Math.cos(angle)*(CW/2-margin)));
+      const arrowY=Math.min(CH-margin,Math.max(margin,CH/2+Math.sin(angle)*(CH/2-margin)));
+      wctx.translate(arrowX,arrowY);wctx.rotate(angle);
+      wctx.globalAlpha=0.5+0.5*pulse;
+      wctx.fillStyle='#f0c040';
+      wctx.beginPath();wctx.moveTo(18,0);wctx.lineTo(-8,-8);wctx.lineTo(-4,0);wctx.lineTo(-8,8);wctx.closePath();wctx.fill();
+      wctx.strokeStyle='#ffffff';wctx.lineWidth=1;wctx.stroke();
+      wctx.globalAlpha=1;
+      wctx.rotate(-angle);
+      wctx.font='14px serif';wctx.textAlign='center';
+      wctx.fillText(m.icon,0,-18);
+    }
+    wctx.restore();
+  });
   wctx.textAlign='left';
 }
 
@@ -2709,23 +2706,25 @@ const OWLS={
   },
 
   _giveMission(){
-    if(P.activeMission){this._givePotion();return;}
-    const m=OWL_MISSIONS[Math.floor(Math.random()*OWL_MISSIONS.length)];
-    P.activeMission={...m};
+    if(!P.activeMissions)P.activeMissions=[];
+    const available=OWL_MISSIONS.filter(m=>!P.activeMissions.find(a=>a.id===m.id));
+    if(!available.length){this._givePotion();return;}
+    const m=available[Math.floor(Math.random()*available.length)];
+    P.activeMissions.push({...m});
     saveGame();
     toast('🦉 Mission: '+m.icon+' '+m.title+' — '+m.desc,6000);
     sfx('win');
   },
 
   checkMissionComplete(zoneId){
-    if(!P||!P.activeMission)return;
-    if(P.activeMission.zone!==zoneId)return;
-    const m=P.activeMission;
-    P.activeMission=null;
-    if(m.reward.gold){P.gold+=m.reward.gold;}
-    if(m.reward.xp){gainXP(m.reward.xp);}
+    if(!P||!P.activeMissions||!P.activeMissions.length)return;
+    const idx=P.activeMissions.findIndex(m=>m.zone===zoneId);
+    if(idx===-1)return;
+    const m=P.activeMissions.splice(idx,1)[0];
+    if(m.reward.gold)P.gold+=m.reward.gold;
+    if(m.reward.xp)gainXP(m.reward.xp);
     updateHUD();saveGame();
-    toast('✅ Mission complete: '+m.icon+' '+m.title+'! +'+(m.reward.gold?m.reward.gold+'G ':'')+''+(m.reward.xp?m.reward.xp+'XP':''),5000);
+    toast('✅ Mission complete: '+m.icon+' '+m.title+'! +'+(m.reward.gold?m.reward.gold+'G ':'')+''+(m.reward.xp?m.reward.xp+' XP':''),5000);
     sfx('lvl');
   },
 
