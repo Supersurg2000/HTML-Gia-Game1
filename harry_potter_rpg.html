@@ -1224,6 +1224,46 @@ const ZONE_ENC2={
   deathhallows:{enc:['deathEater','dementor','inferius','vampire','banshee','skrewt'],                            boss:'bellatrix',bossYear:7},
   hallowscave: {enc:['deathEater','dementor','inferius','boggart','skrewt'],                                      boss:'voldemort',bossYear:7},
 };
+// ── COMPANION BEASTS ─────────────────────────────
+const COMPANIONS={
+  buckbeak:   {name:'Buckbeak',    icon:'🦅',color:'#aa8833',desc:'Loyal Hippogriff. +20% flee chance in battle.', effect:'flee_boost'},
+  crookshanks:{name:'Crookshanks',icon:'🐱',color:'#cc8833',desc:'Half-Kneazle cat. Senses danger ahead.',        effect:'danger_sense'},
+  niffler:    {name:'Niffler',     icon:'🦔',color:'#44332a',desc:'Treasure hunter. +20% gold from all battles.',  effect:'gold_boost'},
+  fawkes:     {name:'Fawkes',      icon:'🔥',color:'#ff4400',desc:'Dumbledore\'s phoenix. Heals 25 HP each turn.', effect:'phoenix_heal'},
+};
+// ── MAP 2 NPCS ────────────────────────────────────
+const MAP2_NPCS=[
+  {name:'Tonks',          icon:'🧝‍♀️',color:'#ff44cc',home:{x:48,y:22},wanderR:3,
+   gifts:['wiggenweld','mana_potion'],
+   dialogue:["Wotcher! Name's Tonks — Nymphadora, but don't call me that.","The Ministry's more dangerous than it looks. Stay sharp!","I tripped over my own feet just getting here. Typical.","Being an Auror means being ready for anything. Are you?","My Patronus is a rabbit. Don't laugh.","Constant Vigilance! Sorry — wrong Auror, but still true."],
+   mid:["Dark times call for sharp wands and sharper minds.","The Order of the Phoenix needs people like you.","Keep your friends close — and your wand closer."],
+   high:["Love is the magic Voldemort never understood.","We fight for the living, not the already lost.","Whatever happens — keep fighting. Promise me."],
+   end:["I never got to say — thank you. For not giving up.","The best magic is the kind you leave in people's hearts."]},
+  {name:'Fleur Delacour', icon:'👸',color:'#aaddff',home:{x:10,y:14},wanderR:2,
+   gifts:['butterbeer','wiggenweld'],
+   dialogue:["'Ogwarts is magnifique, non? But Shell Cottage — eet is 'ome.","In France we 'ave many creatures. But none like zis country's.","Ze Beauxbatons girls were far more elegant, I zink.","Bill says I am too hard on myself. 'E is right, of course.","Courage — eet is not ze absence of fear, but acting despite it.","Welcome to Shell Cottage. You are safe 'ere."],
+   mid:["Ze Triwizard Tournament taught me — strength is nothing wizzout 'eart.","I would fight a dragon again to protect those I love.","You 'ave come far. Zat tells me you are brave."],
+   high:["Do not underestimate kindness. It is ze greatest weapon I know.","Zis war — eet takes everyzing. But love gives it back."],
+   end:["You survived. Bill would be proud. I am proud.","Come back whenever you need rest. Shell Cottage is always open."]},
+  {name:'Viktor Krum',    icon:'🏆',color:'#cc4422',home:{x:28,y:18},wanderR:3,
+   gifts:['felix','mana_potion'],
+   dialogue:["I am not here for the fame. I am here for the challenge.","Durmstrang trained us differently. Harder. Colder.","A seeker must see what others miss. You understand this?","The Quidditch World Cup — I would do it again. Every time.","Power matters little without the wisdom to use it.","I have faced worse than this. Far worse."],
+   mid:["The dark magic they taught at Durmstrang — I chose not to use it.","Being famous is nothing. Being worthy — that is everything.","Hermione once told me: it is our choices that define us. She was right."],
+   high:["I have competed against the best. But this journey of yours — it is something else.","You have more courage than any Seeker I ever faced."],
+   end:["Whatever comes next — you are ready. I can see it.","Win or lose — you played with honour. That is all that matters."]},
+  {name:'Dobby',          icon:'🧦',color:'#88ddaa',home:{x:13,y:42},wanderR:2,
+   gifts:['butterbeer','chocolate'],
+   dialogue:["Dobby is free! And Dobby is very happy to see you!","Harry Potter is the greatest wizard, but you is very brave too!","Dobby has no master now. Dobby helps because Dobby WANTS to!","Has you ever tried Dobby's sock collection? Very fine socks.","Dobby is sorry — Dobby is just so happy!","You is very kind. Dobby likes kind witches and wizards."],
+   mid:["Bad wizards is everywhere. But so is good ones — like you!","Dobby learned from Harry Potter: even the smallest can fight back.","When you is scared — that is when being brave really counts."],
+   high:["Dobby sees great things in you. Very great things.","The House Elves is watching. We is rooting for you."],
+   end:["Dobby is proud to know such a witch or wizard as you. Very proud!","You must go on. Dobby is believing in you — always."]},
+  {name:'Stan Shunpike',  icon:'🚌',color:'#9944cc',home:{x:11,y:35},wanderR:2,
+   gifts:['butterbeer','wiggenweld'],
+   dialogue:["Welcome to the Knight Bus! Best magical transport in Britain!","You look like you could use a ride — and maybe a Butterbeer.","Ernie drives a bit fast, but we always get there in the end.","I seen some things on this bus that'd make your hair stand up.","Thirteen Sickles a ride. Fourteen if you want a hot water bottle.","You'd be amazed what turns up on the Knight Bus."],
+   mid:["The war's made things harder. But we're still running routes every night.","Some days the best thing is just to keep moving forward.","I'm not a hero or anything. Just trying to help, you know?"],
+   high:["You know what they say — fortune favours the brave. And the well-transported.","Keep going. There's always another stop on the road."],
+   end:["Safe travels, then. And if you need a lift — you know where to find us.","The Knight Bus never stops. Neither should you."]}
+];
 
 // ── PLAYER ──────────────────────────────────────
 let P=null;
@@ -1234,7 +1274,7 @@ function mkPlayer(name,house,gender){
     hp:0,mp:0,atk:18,def:8,crit:(h.bonuses.critChance||.05),
     spells:['lumos','expelliarmus','stupefy'],
     inventory:{wiggenweld:2},status:[],defeatedBosses:[],
-    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],activeMissions:[],wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
+    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],activeMissions:[],companions:[],wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
   pl.hp=pl.maxHp;pl.mp=pl.maxMp;
   if(house==='h')pl.inventory.wiggenweld=(pl.inventory.wiggenweld||0)+3;
   return pl;
@@ -1758,6 +1798,19 @@ function showZonePrompt(z){
 function enterZone(){
   const z=promptZone;if(!z)return;
   document.getElementById('zprompt').style.display='none';
+  // Companion acquisition
+  if(z.id==='frozenpool'&&P.companions&&!P.companions.includes('buckbeak')){
+    P.companions.push('buckbeak');toast('🦅 Buckbeak bows to you! He joins your adventure! (+20% flee chance)',5000);sfx('heal');saveGame();
+  }
+  if(z.id==='gringotts'&&P.companions&&!P.companions.includes('niffler')){
+    P.companions.push('niffler');toast('🦔 A Niffler darts to your side! (+20% gold from battles)',5000);sfx('heal');saveGame();
+  }
+  if(z.id==='knockturn'&&P.companions&&!P.companions.includes('crookshanks')&&Math.random()<0.15){
+    P.companions.push('crookshanks');toast('🐱 Crookshanks leaps to your shoulder! He senses danger ahead.',4000);sfx('heal');saveGame();
+  }
+  if(z.id==='depofmyst'&&P.defeatedBosses.includes('bellatrix')&&P.companions&&!P.companions.includes('fawkes')){
+    P.companions.push('fawkes');toast('🔥 Fawkes the Phoenix descends to you! Healing +25 HP each turn in battle.',5000);sfx('heal');saveGame();
+  }
   if(z.safe){P.hp=P.maxHp;P.mp=P.maxMp;P.status=[];sfx('heal');spawnParts('#44dd88',20,CW/2,CH/2);toast('Fully restored!');updateHUD();saveGame();return;}
   if(z.shop){G.showShop();return;}
   if(z.dorm){G.showDorm();return;}
@@ -2055,6 +2108,7 @@ function enemyTurn(){
       if(dmg>0){P.hp=Math.max(0,P.hp-dmg);addLog('💔 '+dmg+' damage! ('+P.hp+'/'+P.maxHp+')',P.hp<P.maxHp*.25?'ld':'le_');sfx('takeDmg');}
     }
     if(P.perks.includes('regen_spirit')&&P.hp>0&&P.hp<P.maxHp*.3){const rg=8;P.hp=Math.min(P.maxHp,P.hp+rg);addLog('💚 Regen Spirit: +'+rg+' HP','lh');}
+    if(P.companions&&P.companions.includes('fawkes')&&P.hp>0){const fh=25;P.hp=Math.min(P.maxHp,P.hp+fh);addLog('🔥 Fawkes heals you! +'+fh+' HP','lh');}
     updateHUD();renderBattle();if(chkEnd())return;
     btlBusy=false;lockBtl(false);
   },blockMs);
@@ -2076,8 +2130,9 @@ function endBattle(won,fled){
   if(won){
     const e=BS.enemy;sfx('win');
     const xp=Math.floor(e.xp*(1+(HOUSES[P.house].bonuses.xpPct||0)));
-    addLog('🏆 Defeated '+e.name+'! +'+xp+' XP +'+e.gold+'G','ls');
-    P.gold+=e.gold;if(e.boss)P.defeatedBosses.push(BS.eKey);
+    let egold=e.gold;if(P.companions&&P.companions.includes('niffler'))egold=Math.floor(egold*1.2);
+    addLog('🏆 Defeated '+e.name+'! +'+xp+' XP +'+egold+'G','ls');
+    P.gold+=egold;if(e.boss)P.defeatedBosses.push(BS.eKey);
     if(e.final){setTimeout(function(){showEnd(true);},1000);return;}
     gainXP(xp);if(currentNPCChallenge)handleNPCChallengeWin(currentNPCChallenge);setTimeout(function(){closeBattle();},1800);
   } else {sfx('die');document.getElementById('battleScr').classList.add('off');showEnd(false);}
@@ -2143,7 +2198,7 @@ function setActiveSlot(n){localStorage.setItem('hpa2_active',String(n));}
 function getSlotData(n){const r=localStorage.getItem(slotKey(n));return r?JSON.parse(r):null;}
 function migrateOldSave(){const old=localStorage.getItem('hpa2');if(!old)return;try{const p=JSON.parse(old);if(!getSlotData(1))localStorage.setItem(slotKey(1),JSON.stringify({player:p,savedAt:Date.now()}));}catch(e){}localStorage.removeItem('hpa2');}
 function sanitizePlayer(p){
-  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};if(!p.activeMissions){p.activeMissions=p.activeMission?[p.activeMission]:[];}delete p.activeMission;
+  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};if(!p.activeMissions){p.activeMissions=p.activeMission?[p.activeMission]:[];}delete p.activeMission;if(!p.companions)p.companions=[];
   // Rebuild equippedSpells
   if(!p.equippedSpells||!p.equippedSpells.length)p.equippedSpells=p.spells.slice(0,6);
   p.equippedSpells=p.equippedSpells.filter(function(k){return p.spells.includes(k);});
@@ -2209,10 +2264,12 @@ function transitionToMap(n){
   if(n===2){
     curMap=2;P.wx=5*TS;P.wy=21*TS;
     camX=P.wx-CW/2;camY=P.wy-CH/2;tCX=camX;tCY=camY;
+    initMap2NPCs();
     MUS.play('map2');toast('🌌 The Wider Wizarding World awaits!',3000);
   } else {
     curMap=1;P.wx=(MW-6)*TS;P.wy=44*TS;
     camX=P.wx-CW/2;camY=P.wy-CH/2;tCX=camX;tCY=camY;
+    activeMap2NPCs=[];
     MUS.play('explore');toast('🏰 Back to Hogwarts Grounds',3000);
   }
   saveGame();
@@ -2580,6 +2637,7 @@ function initWorld(){
   buildMinimap();
   camX=P.wx-CW/2;camY=P.wy-CH/2;tCX=camX;tCY=camY;
   initNPCs();
+  if(curMap===2)initMap2NPCs();
   OWLS.init();
   enterMap();
 }
@@ -2694,13 +2752,15 @@ function loop(now){
   drawAnimated(now);
   drawBeacons(now);
 
-  // NPCs + Owls (map 1 only)
+  // NPCs + Owls
   updateNPCs(now);drawNPCs(now);
   if(curMap===1){OWLS.update(now);OWLS.draw(now);}
+  if(curMap===2){updateMap2NPCs(now);drawMap2NPCs(now);}
 
   // Player shadow + sprite
   const px=Math.round(P.wx-camX),py=Math.round(P.wy-camY);
   drawWizard(wctx,px,py,P.dir,walkFrame,HOUSES[P.house].color,false,P.gender);
+  drawCompanions(now);
 
   updateParts();drawParts();
   drawDayNight(now);
@@ -2958,6 +3018,75 @@ const PERKS={
 let activeNPCs=[],lastNPCTime=0;
 const npcCooldowns={};
 let activeNPCChallenge=null,currentNPCChallenge=null;
+let activeMap2NPCs=[],lastMap2NPCTime=0;
+const m2npcCooldowns={};
+function initMap2NPCs(){
+  activeMap2NPCs=MAP2_NPCS.map(n=>({...n,x:n.home.x,y:n.home.y,wt:0}));
+}
+function updateMap2NPCs(now){
+  if(!MAP2||!activeMap2NPCs.length||now-lastMap2NPCTime<90)return;
+  lastMap2NPCTime=now;
+  activeMap2NPCs.forEach(npc=>{
+    if(--npc.wt>0||Math.random()<.5)return;
+    npc.wt=30+Math.floor(Math.random()*80);
+    const ds=[[.5,0],[-.5,0],[0,.5],[0,-.5]];
+    const d=ds[Math.floor(Math.random()*ds.length)];
+    const nx=npc.x+d[0],ny=npc.y+d[1];
+    const hx=nx-npc.home.x,hy=ny-npc.home.y;
+    if(hx*hx+hy*hy>npc.wanderR*npc.wanderR)return;
+    const tx2=Math.floor(nx),ty2=Math.floor(ny);
+    if(MAP2[ty2]&&WALK.has(MAP2[ty2][tx2])){npc.x=nx;npc.y=ny;}
+  });
+}
+function drawMap2NPCs(now){
+  if(!activeMap2NPCs.length)return;
+  wctx.textAlign='center';
+  activeMap2NPCs.forEach((npc,i)=>{
+    const sx=npc.x*TS-camX,sy=npc.y*TS-camY;
+    if(sx<-60||sx>CW+60||sy<-70||sy>CH+20)return;
+    wctx.globalAlpha=.25;wctx.fillStyle='#000';
+    wctx.beginPath();wctx.ellipse(sx,sy+2,8,3,0,0,6.28);wctx.fill();
+    wctx.globalAlpha=1;
+    wctx.font='22px serif';wctx.fillText(npc.icon,sx,sy-4);
+    wctx.font='bold 8px serif';wctx.fillStyle=npc.color||'#c9a227';
+    wctx.fillText(npc.name,sx,sy+14);
+    const dx2=P.wx/TS-npc.x,dy2=P.wy/TS-npc.y;
+    if(Math.sqrt(dx2*dx2+dy2*dy2)<2.5&&now-(m2npcCooldowns[i]||0)>8000){
+      m2npcCooldowns[i]=now;
+      const pool=[...(npc.dialogue||[])];
+      if(P.level>=5)pool.push(...(npc.mid||[]));
+      if(P.level>=12)pool.push(...(npc.high||[]));
+      if(P.level>=20)pool.push(...(npc.end||[]));
+      const line=pool[Math.floor(Math.random()*pool.length)]||'...';
+      toast(npc.name+':"'+line+'"',4000);
+      if(npc.gifts&&Math.random()<.08&&!npc._giftCD){
+        npc._giftCD=true;
+        setTimeout(()=>{
+          const gift=npc.gifts[Math.floor(Math.random()*npc.gifts.length)];
+          P.inventory[gift]=(P.inventory[gift]||0)+1;
+          toast('🎁 '+npc.name+' gave you a '+ITEMS[gift].name+'!',3500);
+          updateHUD();saveGame();
+          setTimeout(()=>{npc._giftCD=false;},180000);
+        },4500);
+      }
+    }
+  });
+  wctx.textAlign='left';
+}
+function drawCompanions(now){
+  if(!P||!P.companions||!P.companions.length||gameState!=='map')return;
+  const px=Math.round(P.wx-camX),py=Math.round(P.wy-camY);
+  wctx.textAlign='center';
+  P.companions.forEach((cKey,i)=>{
+    const c=COMPANIONS[cKey];if(!c)return;
+    const ang=((now||0)*.0008+i*(Math.PI*2/Math.max(1,P.companions.length)));
+    const ox=Math.cos(ang)*26,oy=Math.sin(ang)*22-6;
+    wctx.font='18px serif';wctx.globalAlpha=0.90;
+    wctx.fillText(c.icon,px+ox,py+oy);
+    wctx.globalAlpha=1;
+  });
+  wctx.textAlign='left';
+}
 function initNPCs(){
   if(!P)return;
   const c=(HOUSE_NPCS[P.house]||[]).map(n=>({...n,x:n.home.x,y:n.home.y,wt:0}));
