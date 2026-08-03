@@ -1113,23 +1113,23 @@ const ZONES=[
   {id:'ravenclaw', name:'Ravenclaw Tower',     icon:'🦅',desc:'The blue and bronze common room — wisdom and wit.',tx:49,ty:1, w:6,h:6,safe:true,color:'#2255cc'},
   {id:'hufflepuff',name:'Hufflepuff Cellar',   icon:'🦡',desc:'The yellow and black common room — loyalty and hard work.',tx:21,ty:29,w:7,h:6,safe:true,color:'#cc9900'},
 ];
-// ── MAP 2 ZONES (filled in Chunk 2) ─────────────
+// ── MAP 2 ZONES ──────────────────────────────────
 const ZONES2=[
-  {id:'platform934',  name:'Platform 9¾',           icon:'🚂',desc:'The magical gateway to Hogwarts. Pick up supplies!',   tx:12,ty:37,w:2,h:1, safe:true, shop:true, color:'#cc4422'},
-  {id:'leakycauldron',name:'The Leaky Cauldron',     icon:'🍺',desc:'A cosy inn. Rest and fully recover here.',            tx:12,ty:39,w:2,h:2, safe:true,            color:'#996633'},
-  {id:'gringotts',    name:'Gringotts Bank',         icon:'🏦',desc:'The safest place in the wizarding world — almost.',   tx:30,ty:17,w:3,h:2, safe:true, shop:true, color:'#ddcc44'},
-  {id:'knockturn',    name:'Knockturn Alley',         icon:'🌑',desc:'A dark alley of dark arts. Beware what lurks here.', tx:22,ty:47,w:3,h:2, danger:2, lockYear:2, color:'#334455'},
-  {id:'borginburkes', name:"Borgin & Burkes",         icon:'💀',desc:'Dark artefacts for those who dare to purchase them.', tx:22,ty:51,w:3,h:2, shop:true, lockYear:2, color:'#553344'},
-  {id:'shellcottage', name:'Shell Cottage',           icon:'🐚',desc:"Bill & Fleur's safe haven by the sea. Rest here.",   tx:9,ty:12, w:2,h:2, safe:true, lockYear:3, color:'#4488aa'},
-  {id:'ministry2',    name:'Ministry of Magic',       icon:'🏛️',desc:'Enter via the phone booth — Ministry business.',    tx:46,ty:37,w:2,h:1, danger:3, lockYear:4, color:'#aa44ff'},
-  {id:'godrichollow', name:"Godric's Hollow",         icon:'⚡',desc:"Harry's birthplace. The Potters' cottage in ruins.", tx:51,ty:12,w:6,h:5, danger:2, lockYear:5, color:'#8866aa'},
-  {id:'ghgraveyard',  name:"St. Brutus's Churchyard", icon:'⚰️',desc:'Ancient wizard graves. Something watches you.',    tx:63,ty:9, w:8,h:8, danger:3, lockYear:5, color:'#556677'},
-  {id:'depofmyst',    name:'Dept. of Mysteries',      icon:'🔮',desc:'The most secret place in the Ministry of Magic.',   tx:58,ty:48,w:8,h:6, danger:4, lockYear:6, color:'#663388'},
-  {id:'deanforest',   name:'Forest of Dean',          icon:'🌲',desc:'Harry and Hermione camped here. The sword lies frozen.',tx:76,ty:28,w:8,h:4, danger:3, lockYear:6, color:'#335522'},
-  {id:'frozenpool',   name:'Frozen Pool',             icon:'⚔️',desc:'Something glimmers beneath the ice...',              tx:79,ty:36,w:5,h:4, danger:0, lockYear:6, color:'#aaccff'},
-  {id:'malfoymanor',  name:'Malfoy Manor',            icon:'🏚️',desc:'The lair of Lucius Malfoy and the Death Eaters.',  tx:78,ty:8, w:8,h:6, danger:5, lockYear:7, color:'#334422'},
-  {id:'deathhallows', name:'Deathly Hallows Trail',   icon:'☠️',desc:'The path of the three Deathly Hallows.',           tx:72,ty:50,w:8,h:3, danger:4, lockYear:7, color:'#221133'},
-  {id:'hallowscave',  name:'The Hallows Altar',        icon:'🔺',desc:'Three relics of Death. The Elder Wand, the Stone, the Cloak.',tx:88,ty:58,w:7,h:6, danger:5, lockYear:7, color:'#110022'},
+  {id:'platform934',  name:'Platform 9¾',            icon:'🚂',desc:'The magical gateway. Stock up on supplies!',          tx:12,ty:37,w:2,h:1, shop:true,             color:'#cc4422'},
+  {id:'leakycauldron',name:'The Leaky Cauldron',      icon:'🍺',desc:'A cosy inn. Rest and fully recover here.',            tx:12,ty:40,w:2,h:2, safe:true,            color:'#996633'},
+  {id:'gringotts',    name:'Gringotts Bank',          icon:'🏦',desc:'The goblin bank. Visit the vaults — carefully.',      tx:30,ty:16,w:3,h:3, shop:true,            color:'#ddcc44'},
+  {id:'knockturn',    name:'Knockturn Alley',          icon:'🌑',desc:'A dark alley of dark arts. Beware what lurks here.', tx:22,ty:47,w:3,h:2, danger:2, lockYear:2, color:'#334455'},
+  {id:'borginburkes', name:"Borgin & Burkes",          icon:'💀',desc:'Dark artefacts — for those who dare to purchase.',   tx:22,ty:51,w:3,h:2, shop:true, lockYear:2, color:'#553344'},
+  {id:'shellcottage', name:'Shell Cottage',            icon:'🐚',desc:"Bill & Fleur's safe haven by the sea. Rest here.",  tx:9,ty:12, w:2,h:2, safe:true, lockYear:3, color:'#4488aa'},
+  {id:'ministry2',    name:'Ministry of Magic',        icon:'🏛️',desc:'Enter via the phone booth — Ministry business.',   tx:46,ty:36,w:2,h:2, danger:3, lockYear:4, color:'#aa44ff'},
+  {id:'godrichollow', name:"Godric's Hollow",          icon:'⚡',desc:"Harry's birthplace. The Potters' cottage in ruins.",tx:51,ty:12,w:5,h:5, danger:2, lockYear:5, color:'#8866aa'},
+  {id:'ghgraveyard',  name:"St. Brutus's Churchyard",  icon:'⚰️',desc:'Ancient wizard graves. Something watches you.',   tx:63,ty:9, w:8,h:8, danger:3, lockYear:5, color:'#556677'},
+  {id:'depofmyst',    name:'Dept. of Mysteries',       icon:'🔮',desc:'The most secret place in the Ministry of Magic.',   tx:58,ty:47,w:8,h:7, danger:4, lockYear:6, color:'#663388'},
+  {id:'deanforest',   name:'Forest of Dean',           icon:'🌲',desc:'Harry and Hermione camped here. The frozen pool...',tx:76,ty:28,w:8,h:4, danger:3, lockYear:6, color:'#335522'},
+  {id:'frozenpool',   name:'Frozen Pool',              icon:'⚔️',desc:'Something glimmers beneath the ice...',             tx:79,ty:36,w:5,h:4, safe:true, lockYear:6, color:'#aaccff'},
+  {id:'malfoymanor',  name:'Malfoy Manor',             icon:'🏚️',desc:'The lair of the Death Eaters. Enter at your peril.',tx:78,ty:8, w:8,h:6, danger:5, lockYear:7, color:'#334422'},
+  {id:'deathhallows', name:'Deathly Hallows Trail',    icon:'☠️',desc:'The path of the three Hallows. Turn back now.',    tx:72,ty:50,w:8,h:3, danger:4, lockYear:7, color:'#221133'},
+  {id:'hallowscave',  name:'The Hallows Altar',         icon:'🔺',desc:'Three relics of Death. The power to conquer all.',tx:88,ty:58,w:7,h:6, danger:5, lockYear:7, color:'#110022'},
 ];
 
 // ── GAME DATA ─────────────────────────────────────
@@ -1187,6 +1187,11 @@ const ENEMIES={
   vampire:   {name:'Vampire',            icon:'🧛',hp:105,atk:37,def:10,xp:98, gold:26,atks:['bite','soul_drain','dark_curse'],story:'A vampire swoops silently from the shadows!',  color:'#882244',time:'night'},
   banshee:   {name:'Banshee',            icon:'🌫️',hp:82, atk:29,def:6, xp:78, gold:14,atks:['wail','fear'],                story:"A banshee's shriek tears through the dark!",    color:'#ccddff',time:'night'},
   inferius:  {name:'Inferius',           icon:'🧟',hp:78, atk:27,def:9, xp:68, gold:15,atks:['throw','dark_curse','fear'],   story:'An Inferius shambles out of the darkness!',     color:'#556644',time:'night'},
+  // ── Map 2 exclusive creatures ────────────────────
+  skrewt:    {name:'Blast-Ended Skrewt', icon:'🦂',hp:118,atk:38,def:16,xp:112,gold:28,atks:['blast','tail'],               story:'A Blast-Ended Skrewt charges at you!',           color:'#dd8822'},
+  greyback:  {name:'Fenrir Greyback',    icon:'🐺',hp:245,atk:63,def:19,xp:185,gold:55,atks:['savage','howl','bite'],        story:'Fenrir Greyback snarls — he hunts by taste!',    color:'#8b5e3c',boss:true},
+  umbridge:  {name:'Dolores Umbridge',   icon:'🎀',hp:178,atk:45,def:22,xp:158,gold:62,atks:['crucio','dark_curse'],         story:'"I must not tell lies." Umbridge raises her wand!',color:'#ff88cc',boss:true},
+  bankDragon:{name:'Gringotts Dragon',   icon:'🐉',hp:320,atk:68,def:28,xp:240,gold:100,atks:['fire','roar','tail'],         story:'The Gringotts dragon breaks its chains! Run!',   color:'#ccccaa',boss:true},
 };
 const ITEMS={
   butterbeer: {name:'Butterbeer',        icon:'🍺',desc:'Restores 25 HP', price:12,effect:'hp',value:25},
@@ -1209,14 +1214,15 @@ const ZONE_ENC={
   azkaban:  {enc:['deathEater','boggart','dementor','dementor','vampire','inferius'],                          boss:'lucius',   bossYear:5},
 };
 const ZONE_ENC2={
-  knockturn:  {enc:['deathEater','boggart','vampire','gnome'],                                                   boss:null},
-  godrichollow:{enc:['deathEater','boggart','inferius','dementor'],                                              boss:'nagini',   bossYear:5},
-  ghgraveyard:{enc:['inferius','inferius','boggart','vampire','deathEater'],                                     boss:'voldemort',bossYear:6},
-  depofmyst:  {enc:['deathEater','deathEater','inferius','boggart','dementor'],                                  boss:'bellatrix',bossYear:6},
-  deanforest: {enc:['acromantula','boggart','banshee','hippogriff','vampire'],                                   boss:'werewolf', bossYear:6},
-  malfoymanor:{enc:['deathEater','deathEater','boggart','dementor','vampire','inferius'],                        boss:'lucius',   bossYear:7},
-  deathhallows:{enc:['deathEater','dementor','inferius','vampire','banshee'],                                    boss:'bellatrix',bossYear:7},
-  hallowscave: {enc:['deathEater','dementor','inferius','boggart'],                                              boss:'voldemort',bossYear:7},
+  knockturn:   {enc:['deathEater','boggart','vampire','skrewt'],                                                  boss:null},
+  ministry2:   {enc:['deathEater','deathEater','boggart','inferius','dementor'],                                  boss:'umbridge', bossYear:5},
+  godrichollow:{enc:['deathEater','boggart','inferius','dementor','skrewt'],                                      boss:'nagini',   bossYear:5},
+  ghgraveyard: {enc:['inferius','inferius','boggart','vampire','deathEater','dementor'],                          boss:'voldemort',bossYear:6},
+  depofmyst:   {enc:['deathEater','deathEater','inferius','boggart','dementor'],                                  boss:'bellatrix',bossYear:6},
+  deanforest:  {enc:['acromantula','skrewt','banshee','hippogriff','boggart','vampire'],                          boss:'greyback', bossYear:6},
+  malfoymanor: {enc:['deathEater','deathEater','boggart','dementor','vampire','inferius'],                        boss:'lucius',   bossYear:7},
+  deathhallows:{enc:['deathEater','dementor','inferius','vampire','banshee','skrewt'],                            boss:'bellatrix',bossYear:7},
+  hallowscave: {enc:['deathEater','dementor','inferius','boggart','skrewt'],                                      boss:'voldemort',bossYear:7},
 };
 
 // ── PLAYER ──────────────────────────────────────
@@ -1635,15 +1641,22 @@ const mm=document.getElementById('minimap');
 const mmctx=mm.getContext('2d');
 const MC={[T.G]:'#3a6020',[T.DG]:'#1a2e08',[T.P]:'#7a6248',[T.W]:'#445566',[T.FT]:'#1a2e08',[T.DT]:'#0f1e06',[T.WA]:'#1a4a8a',[T.CW]:'#667788',[T.CF]:'#99aabb',[T.DO]:'#c9a227',[T.SH]:'#2d5218',[T.QP]:'#4f8834',[T.FL]:'#3a6020',[T.RK]:'#667788',[T.GR]:'#1e1e2a',[T.PO]:'#8822ff',[T.FE]:'#6b4a2a',[T.BR]:'#7a6248'};
 let mmOff=null;
+let mmOff2=null;
+function _buildMinimapFor(mapData,zones){
+  const c=document.createElement('canvas');c.width=140;c.height=105;
+  const mc=c.getContext('2d');const S=140/MW;
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){mc.fillStyle=MC[mapData[y][x]]||'#3a6020';mc.fillRect(Math.floor(x*S),Math.floor(y*S),Math.ceil(S),Math.ceil(S));}
+  zones.forEach(z=>{mc.fillStyle=z.color+'88';mc.fillRect(z.tx*S,z.ty*S,z.w*S,z.h*S);});
+  return c;
+}
 function buildMinimap(){
-  mmOff=document.createElement('canvas');mmOff.width=140;mmOff.height=105;
-  const mc=mmOff.getContext('2d');const S=140/MW;
-  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){mc.fillStyle=MC[MAP[y][x]]||'#3a6020';mc.fillRect(Math.floor(x*S),Math.floor(y*S),Math.ceil(S),Math.ceil(S));}
-  ZONES.forEach(z=>{mc.fillStyle=z.color+'88';mc.fillRect(z.tx*S,z.ty*S,z.w*S,z.h*S);});
+  mmOff=_buildMinimapFor(MAP,ZONES);
+  mmOff2=_buildMinimapFor(MAP2,ZONES2);
 }
 function drawMinimap(){
-  if(!mmOff||!P)return;
-  mmctx.drawImage(mmOff,0,0);
+  const mm=curMap===2?mmOff2:mmOff;
+  if(!mm||!P)return;
+  mmctx.drawImage(mm,0,0);
   const S=140/MW;
   const mx=P.wx/TS*S,my=P.wy/TS*(105/MH);
   mmctx.fillStyle='#fff';mmctx.beginPath();mmctx.arc(mx,my,3,0,6.28);mmctx.fill();
@@ -1654,8 +1667,9 @@ function drawAnimated(now){
   const wave=Math.sin(now*.002)*2;
   const tx0=Math.floor(camX/TS),ty0=Math.floor(camY/TS);
   const tx1=Math.min(MW-1,tx0+Math.ceil(CW/TS)+2),ty1=Math.min(MH-1,ty0+Math.ceil(CH/TS)+2);
+  const aM=curMap===2?MAP2:MAP;
   for(let ty=ty0;ty<=ty1;ty++)for(let tx=tx0;tx<=tx1;tx++){
-    const tile=MAP[ty]&&MAP[ty][tx];
+    const tile=aM[ty]&&aM[ty][tx];
     if(tile===T.WA){
       const px=tx*TS-camX,py=ty*TS-camY;
       wctx.fillStyle='#1a4a8a';wctx.fillRect(px,py,TS,TS);
@@ -1676,7 +1690,8 @@ function drawAnimated(now){
 // ── ZONE BEACONS ─────────────────────────────────
 function drawBeacons(now){
   wctx.textAlign='center';
-  ZONES.forEach(z=>{
+  const activeZones=curMap===2?ZONES2:ZONES;
+  activeZones.forEach(z=>{
     const wx=z.tx*TS+z.w*TS/2-camX,wy=(z.ty-0.5)*TS-camY;
     if(wx<-40||wx>CW+40||wy<-60||wy>CH+40)return;
     const pulse=.65+Math.sin(now*.003+z.tx*.5)*.35;
@@ -2024,6 +2039,7 @@ function enemyTurn(){
       case'avada':dmg=Math.floor(P.maxHp*.25);addLog('☠️ Avada Kedavra rebounds!','le_');break;
       case'dark_wave':dmg=Math.floor(dmg*1.3);addLog('💀 Dark magic wave!','le_');break;
       case'fire':dmg=Math.floor(dmg*1.4);addLog('🔥 Dragon fire engulfs you!','ld');break;
+      case'blast':dmg=Math.floor(dmg*1.5);addLog('💥 Blast-Ended explosion burns you!','ld');break;
       case'tail':dmg=Math.floor(dmg*1.2);addLog('🐉 Spiked tail swipe!','le_');break;
       case'roar':addLog('🐉 Deafening roar! You flinch.','le_');P.mp=Math.max(0,P.mp-10);break;
       case'fear':addLog('👤 Your worst fear grips you!','le_');P.mp=Math.max(0,P.mp-15);break;
