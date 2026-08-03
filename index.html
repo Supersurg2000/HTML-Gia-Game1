@@ -750,6 +750,8 @@ function getTile(tx,ty){
   if(tx>=52&&tx<=70&&ty>=44&&ty<=46)return T.P;
   // South road connecting areas
   if(tx>=68&&tx<=70&&ty>=40&&ty<=46)return T.P;
+  // Eastern gateway corridor — transition to Map 2
+  if(tx>=97&&tx<=98&&ty>=43&&ty<=47)return T.P;
 
   // Diagon Alley (right side, middle)
   if(tx>=70&&tx<=97&&ty>=38&&ty<=60){
@@ -775,21 +777,180 @@ function getTile(tx,ty){
   if(rv<9)return T.RK;
   return T.G;
 }
+// ── MAP 2: THE WIDER WIZARDING WORLD ────────────
+function getTile2(tx,ty){
+  if(tx<1||ty<1||tx>MW-2||ty>MH-2)return T.W;
+  // Transition corridor from map 1 (left edge)
+  if(tx<=4&&ty>=20&&ty<=27)return T.P;
+  // Shell Cottage — safe haven (top-left)
+  if(tx>=4&&tx<=15&&ty>=7&&ty<=18){
+    if(ty===18&&(tx===9||tx===10))return T.DO;
+    if(ty===7||ty===18||tx===4||tx===15)return T.W;
+    return T.CF;
+  }
+  if(tx>=4&&tx<=12&&ty>=18&&ty<=21)return T.P;
+  // Platform 9¾ building
+  if(tx>=8&&tx<=21&&ty>=27&&ty<=37){
+    if(ty===37&&(tx===13||tx===14))return T.DO;
+    if(ty===27||ty===37||tx===8||tx===21)return T.W;
+    if(ty>=33&&ty<=35&&tx>8&&tx<21)return T.BR;
+    return T.CF;
+  }
+  // Leaky Cauldron (inn/pub)
+  if(tx>=9&&tx<=18&&ty>=39&&ty<=48){
+    if(ty===39&&(tx===13||tx===14))return T.DO;
+    if(ty===39||ty===48||tx===9||tx===18)return T.W;
+    return T.CF;
+  }
+  // Station forecourt + west access road
+  if(tx>=4&&tx<=25&&ty>=20&&ty<=24)return T.P;
+  if(tx>=5&&tx<=23&&ty>=37&&ty<=41)return T.P;
+  // Gringotts Bank (grand marble hall)
+  if(tx>=20&&tx<=44&&ty>=5&&ty<=22){
+    if(tx>=23&&tx<=41&&ty>=6&&ty<=20){
+      if(ty===20&&(tx===31||tx===32))return T.DO;
+      if(ty===6||ty===20||tx===23||tx===41)return T.CW;
+      if((tx===27||tx===37)&&ty>6&&ty<20)return T.CW;
+      return T.CF;
+    }
+    if(ty>=5&&ty<=6)return hsh(tx,ty,12)<45?T.DG:T.RK;
+    if(ty>=20&&ty<=22&&tx>=28&&tx<=36)return T.P;
+    return T.P;
+  }
+  if(tx>=22&&tx<=26&&ty>=20&&ty<=24)return T.P;
+  // Knockturn Alley (dark cobblestones + two shops)
+  if(tx>=19&&tx<=37&&ty>=47&&ty<=68){
+    if((ty>=47&&ty<=49)||(tx>=27&&tx<=29))return T.P;
+    if(tx>=20&&tx<=27&&ty>=50&&ty<=60){
+      if(ty===50&&(tx===23||tx===24))return T.DO;
+      if(ty===50||ty===60||tx===20||tx===27)return T.W;
+      return T.CF;
+    }
+    if(tx>=29&&tx<=36&&ty>=50&&ty<=60){
+      if(ty===50&&(tx===32||tx===33))return T.DO;
+      if(ty===50||ty===60||tx===29||tx===36)return T.W;
+      return T.CF;
+    }
+    return hsh(tx,ty,5)<25?T.RK:T.DG;
+  }
+  if(tx>=19&&tx<=22&&ty>=43&&ty<=49)return T.P;
+  // Main east-west roads
+  if(ty>=20&&ty<=22&&tx>=4&&tx<=72)return T.P;
+  if(ty>=43&&ty<=45&&tx>=4&&tx<=62)return T.P;
+  // Central north-south road
+  if(tx>=44&&tx<=46&&ty>=5&&ty<=43)return T.P;
+  // Godric's Hollow village (Potter cottage ruins + cottages + graveyard)
+  if(tx>=47&&tx<=72&&ty>=7&&ty<=33){
+    if((ty>=20&&ty<=22)||(tx>=56&&tx<=58))return T.P;
+    if(tx>=48&&tx<=58&&ty>=8&&ty<=18){
+      if(ty===8||ty===18||tx===48||tx===58)return T.RK;
+      if(hsh(tx,ty,7)<18)return T.RK;
+      return T.GR;
+    }
+    if(tx>=48&&tx<=55&&ty>=18&&ty<=22){
+      if(ty===22&&(tx===51||tx===52))return T.DO;
+      if(ty===18||ty===22||tx===48||tx===55)return T.W;
+      return T.CF;
+    }
+    if(tx>=57&&tx<=64&&ty>=18&&ty<=22){
+      if(ty===22&&(tx===60||tx===61))return T.DO;
+      if(ty===18||ty===22||tx===57||tx===64)return T.W;
+      return T.CF;
+    }
+    if(tx>=63&&tx<=72&&ty>=8&&ty<=22){
+      if(ty===8||ty===22||tx===63||tx===72)return T.FE;
+      if(hsh(tx,ty,9)<12)return T.RK;
+      return T.GR;
+    }
+    return T.P;
+  }
+  // Ministry of Magic complex (phone booth + atrium + Dept of Mysteries)
+  if(tx>=44&&tx<=68&&ty>=30&&ty<=57){
+    if(ty>=30&&ty<=32)return T.P;
+    if(tx>=46&&tx<=49&&ty>=32&&ty<=38){
+      if(tx===47&&ty===37)return T.PO;
+      if(ty===32||tx===46||tx===49)return T.W;
+      return T.CF;
+    }
+    if(tx>=50&&tx<=66&&ty>=32&&ty<=47){
+      if(ty===32&&(tx===57||tx===58))return T.DO;
+      if(ty===32||ty===47||tx===50||tx===66)return T.CW;
+      if((tx===54||tx===62)&&ty>32&&ty<47)return T.CW;
+      return T.CF;
+    }
+    if(tx>=54&&tx<=68&&ty>=47&&ty<=57){
+      if(ty===47&&(tx===60||tx===61))return T.DO;
+      if(ty===47||ty===57||tx===54||tx===68)return T.CW;
+      if(hsh(tx,ty,3)<10)return T.CW;
+      return T.CF;
+    }
+    return T.P;
+  }
+  // Malfoy Manor (Gothic estate with iron fence + dungeon wing)
+  if(tx>=69&&tx<=93&&ty>=4&&ty<=28){
+    if(ty===4||ty===28||tx===69||tx===93)return T.FE;
+    if(tx>=73&&tx<=89&&ty>=5&&ty<=21){
+      if(ty===21&&(tx===80||tx===81))return T.DO;
+      if(ty===5||ty===21||tx===73||tx===89)return T.CW;
+      if((tx===77||tx===85)&&ty>5&&ty<21)return T.CW;
+      return T.CF;
+    }
+    if(tx>=82&&tx<=92&&ty>=21&&ty<=27){
+      if(ty===21&&(tx===86||tx===87))return T.DO;
+      if(ty===21||ty===27||tx===82||tx===92)return T.CW;
+      return T.CF;
+    }
+    return hsh(tx,ty,2)<35?T.DT:T.DG;
+  }
+  if(tx>=69&&tx<=73&&ty>=24&&ty<=28)return T.P;
+  // Forest of Dean (with frozen pool — Sword of Gryffindor)
+  if(tx>=70&&tx<=98&&ty>=28&&ty<=47){
+    const dx2=tx-82,dy2=ty-38;
+    if(dx2*dx2/18+dy2*dy2/12<1)return T.WA;
+    if(ty>=28&&ty<=30&&tx>=70&&tx<=90)return T.P;
+    return hsh(tx,ty,3)<55?T.DT:T.DG;
+  }
+  // Deathly Hallows Trail (south far-right — ruins + cave altar)
+  if(tx>=68&&tx<=98&&ty>=47&&ty<=70){
+    if(ty>=50&&ty<=52&&tx>=68&&tx<=92)return T.P;
+    if(tx>=70&&tx<=83&&ty>=55&&ty<=66){
+      if(ty===55||ty===66||tx===70||tx===83)return T.FE;
+      if(hsh(tx,ty,6)<15)return T.RK;
+      return T.GR;
+    }
+    if(tx>=85&&tx<=97&&ty>=56&&ty<=68){
+      if(ty===68&&(tx===90||tx===91))return T.DO;
+      if(ty===56||ty===68||tx===85||tx===97)return T.RK;
+      if(hsh(tx,ty,11)<12)return T.RK;
+      return T.CF;
+    }
+    return hsh(tx,ty,4)<60?T.DT:T.DG;
+  }
+  const rv2=hsh(tx,ty,2);
+  if(rv2<4)return T.FL;
+  if(rv2<7)return T.SH;
+  if(rv2<9)return T.RK;
+  return T.G;
+}
 
-let MAP=null;
+let MAP=null,MAP2=null,curMap=1;
 function buildMap(){
   if(MAP)return;
-  MAP=[];
-  for(let y=0;y<MH;y++){MAP[y]=[];for(let x=0;x<MW;x++)MAP[y][x]=getTile(x,y);}
+  MAP=[];for(let y=0;y<MH;y++){MAP[y]=[];for(let x=0;x<MW;x++)MAP[y][x]=getTile(x,y);}
+  MAP2=[];for(let y=0;y<MH;y++){MAP2[y]=[];for(let x=0;x<MW;x++)MAP2[y][x]=getTile2(x,y);}
 }
 
 // ── TILE RENDERER ───────────────────────────────
-let mapOff=null;
+let mapOff=null,mapOff2=null;
 function prerenderMap(){
   mapOff=document.createElement('canvas');
   mapOff.width=MW*TS;mapOff.height=MH*TS;
   const cx=mapOff.getContext('2d');
   for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)renderTile(cx,x,y,MAP[y][x]);
+  mapOff2=document.createElement('canvas');
+  mapOff2.width=MW*TS;mapOff2.height=MH*TS;
+  const cx2=mapOff2.getContext('2d');
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)renderTile(cx2,x,y,MAP2[y][x]);
 }
 function renderTile(cx,tx,ty,t){
   const px=tx*TS,py=ty*TS,r=hsh(tx,ty)%8;
@@ -952,6 +1113,24 @@ const ZONES=[
   {id:'ravenclaw', name:'Ravenclaw Tower',     icon:'🦅',desc:'The blue and bronze common room — wisdom and wit.',tx:49,ty:1, w:6,h:6,safe:true,color:'#2255cc'},
   {id:'hufflepuff',name:'Hufflepuff Cellar',   icon:'🦡',desc:'The yellow and black common room — loyalty and hard work.',tx:21,ty:29,w:7,h:6,safe:true,color:'#cc9900'},
 ];
+// ── MAP 2 ZONES (filled in Chunk 2) ─────────────
+const ZONES2=[
+  {id:'platform934',  name:'Platform 9¾',           icon:'🚂',desc:'The magical gateway to Hogwarts. Pick up supplies!',   tx:12,ty:37,w:2,h:1, safe:true, shop:true, color:'#cc4422'},
+  {id:'leakycauldron',name:'The Leaky Cauldron',     icon:'🍺',desc:'A cosy inn. Rest and fully recover here.',            tx:12,ty:39,w:2,h:2, safe:true,            color:'#996633'},
+  {id:'gringotts',    name:'Gringotts Bank',         icon:'🏦',desc:'The safest place in the wizarding world — almost.',   tx:30,ty:17,w:3,h:2, safe:true, shop:true, color:'#ddcc44'},
+  {id:'knockturn',    name:'Knockturn Alley',         icon:'🌑',desc:'A dark alley of dark arts. Beware what lurks here.', tx:22,ty:47,w:3,h:2, danger:2, lockYear:2, color:'#334455'},
+  {id:'borginburkes', name:"Borgin & Burkes",         icon:'💀',desc:'Dark artefacts for those who dare to purchase them.', tx:22,ty:51,w:3,h:2, shop:true, lockYear:2, color:'#553344'},
+  {id:'shellcottage', name:'Shell Cottage',           icon:'🐚',desc:"Bill & Fleur's safe haven by the sea. Rest here.",   tx:9,ty:12, w:2,h:2, safe:true, lockYear:3, color:'#4488aa'},
+  {id:'ministry2',    name:'Ministry of Magic',       icon:'🏛️',desc:'Enter via the phone booth — Ministry business.',    tx:46,ty:37,w:2,h:1, danger:3, lockYear:4, color:'#aa44ff'},
+  {id:'godrichollow', name:"Godric's Hollow",         icon:'⚡',desc:"Harry's birthplace. The Potters' cottage in ruins.", tx:51,ty:12,w:6,h:5, danger:2, lockYear:5, color:'#8866aa'},
+  {id:'ghgraveyard',  name:"St. Brutus's Churchyard", icon:'⚰️',desc:'Ancient wizard graves. Something watches you.',    tx:63,ty:9, w:8,h:8, danger:3, lockYear:5, color:'#556677'},
+  {id:'depofmyst',    name:'Dept. of Mysteries',      icon:'🔮',desc:'The most secret place in the Ministry of Magic.',   tx:58,ty:48,w:8,h:6, danger:4, lockYear:6, color:'#663388'},
+  {id:'deanforest',   name:'Forest of Dean',          icon:'🌲',desc:'Harry and Hermione camped here. The sword lies frozen.',tx:76,ty:28,w:8,h:4, danger:3, lockYear:6, color:'#335522'},
+  {id:'frozenpool',   name:'Frozen Pool',             icon:'⚔️',desc:'Something glimmers beneath the ice...',              tx:79,ty:36,w:5,h:4, danger:0, lockYear:6, color:'#aaccff'},
+  {id:'malfoymanor',  name:'Malfoy Manor',            icon:'🏚️',desc:'The lair of Lucius Malfoy and the Death Eaters.',  tx:78,ty:8, w:8,h:6, danger:5, lockYear:7, color:'#334422'},
+  {id:'deathhallows', name:'Deathly Hallows Trail',   icon:'☠️',desc:'The path of the three Deathly Hallows.',           tx:72,ty:50,w:8,h:3, danger:4, lockYear:7, color:'#221133'},
+  {id:'hallowscave',  name:'The Hallows Altar',        icon:'🔺',desc:'Three relics of Death. The Elder Wand, the Stone, the Cloak.',tx:88,ty:58,w:7,h:6, danger:5, lockYear:7, color:'#110022'},
+];
 
 // ── GAME DATA ─────────────────────────────────────
 const HOUSES={g:{name:'Gryffindor',color:'#cc3333',animal:'🦁',bonuses:{dmgPct:.15,maxHp:10}},s:{name:'Slytherin',color:'#226633',animal:'🐍',bonuses:{critChance:.20,maxMp:15}},r:{name:'Ravenclaw',color:'#2255cc',animal:'🦅',bonuses:{extraSpells:2,xpPct:.10}},h:{name:'Hufflepuff',color:'#cc9900',animal:'🦡',bonuses:{healPct:.25,startPotions:3}}};
@@ -1028,6 +1207,16 @@ const ZONE_ENC={
   roomreq:  {enc:['boggart','peeves','gnome','banshee'],                                                       boss:null},
   dragons:  {enc:['hippogriff','hippogriff','acromantula','boggart','banshee','inferius'],                    boss:'horntail', bossYear:3},
   azkaban:  {enc:['deathEater','boggart','dementor','dementor','vampire','inferius'],                          boss:'lucius',   bossYear:5},
+};
+const ZONE_ENC2={
+  knockturn:  {enc:['deathEater','boggart','vampire','gnome'],                                                   boss:null},
+  godrichollow:{enc:['deathEater','boggart','inferius','dementor'],                                              boss:'nagini',   bossYear:5},
+  ghgraveyard:{enc:['inferius','inferius','boggart','vampire','deathEater'],                                     boss:'voldemort',bossYear:6},
+  depofmyst:  {enc:['deathEater','deathEater','inferius','boggart','dementor'],                                  boss:'bellatrix',bossYear:6},
+  deanforest: {enc:['acromantula','boggart','banshee','hippogriff','vampire'],                                   boss:'werewolf', bossYear:6},
+  malfoymanor:{enc:['deathEater','deathEater','boggart','dementor','vampire','inferius'],                        boss:'lucius',   bossYear:7},
+  deathhallows:{enc:['deathEater','dementor','inferius','vampire','banshee'],                                    boss:'bellatrix',bossYear:7},
+  hallowscave: {enc:['deathEater','dementor','inferius','boggart'],                                              boss:'voldemort',bossYear:7},
 };
 
 // ── PLAYER ──────────────────────────────────────
@@ -1306,10 +1495,71 @@ const MUS=(function(){
     [131,460],[0,230],[165,230],[196,460],[131,230],
     [131,920],[0,460],
   ];
+  // ── MAP 2: WIDER WIZARDING WORLD — Dark D-minor, 160 BPM ──
+  // Intense, driving, sinister — fits the danger beyond Hogwarts
+  const M2_MEL=[
+    // Theme A — dark march
+    [587,188],[0,94],[659,188],[698,188],[784,376],[0,188],
+    [784,188],[698,188],[659,188],[587,188],[523,376],[0,188],
+    [466,188],[523,188],[587,188],[659,188],[784,188],[880,376],[0,188],
+    [587,752],[0,376],
+    // Theme B — sinister climb
+    [294,188],[349,188],[440,188],[523,188],[587,376],[0,188],
+    [523,188],[466,188],[440,188],[392,188],[349,376],[0,188],
+    [330,188],[392,188],[466,188],[523,188],[587,188],[659,188],[784,376],[0,188],
+    [784,752],[0,376],
+    // Theme C — urgent peril
+    [880,94],[0,94],[784,94],[0,94],[784,188],[698,188],[659,376],[0,188],
+    [659,94],[0,94],[587,94],[0,94],[587,188],[523,188],[466,376],[0,188],
+    [523,188],[587,188],[659,188],[784,188],[880,188],[932,188],[1047,376],[0,188],
+    [784,752],[0,376],
+    // Theme D — dark resolve
+    [1047,188],[932,188],[880,188],[784,188],[698,188],[659,188],[587,376],[0,188],
+    [523,188],[466,188],[440,188],[392,188],[330,188],[294,188],[247,376],[0,188],
+    [294,188],[349,188],[440,188],[523,188],[587,188],[523,188],[440,376],[0,188],
+    [294,752],[0,376],
+  ];
+  const M2_BAS=[
+    [147,376],[0,188],[147,188],[220,376],[0,188],
+    [131,376],[0,188],[131,188],[196,376],[0,188],
+    [175,376],[0,188],[175,188],[262,376],[0,188],
+    [147,752],[0,752],
+    [220,376],[0,376],[196,376],[0,376],
+    [175,376],[0,376],[165,376],[0,376],
+    [147,376],[0,188],[175,188],[220,376],[0,376],
+    [294,752],[0,752],
+    [147,188],[0,188],[147,188],[0,188],[147,188],[0,188],[220,188],[0,188],
+    [196,188],[0,188],[196,188],[0,188],[196,188],[0,188],[294,188],[0,188],
+    [175,188],[0,188],[175,188],[0,188],[175,188],[0,188],[262,188],[0,188],
+    [147,752],[0,752],
+    [440,376],[0,376],[392,376],[0,376],
+    [349,376],[0,376],[330,376],[0,376],
+    [147,376],[0,188],[175,188],[220,376],[0,376],
+    [147,752],[0,752],
+  ];
+  const M2_CTR=[
+    [233,188],[0,94],[247,94],[220,188],[196,376],[0,188],
+    [196,188],[0,94],[175,94],[165,188],[147,376],[0,188],
+    [220,188],[233,188],[247,188],[220,188],[196,188],[175,188],[165,376],[0,188],
+    [147,752],[0,376],
+    [330,376],[0,188],[311,94],[294,94],[311,376],[0,188],
+    [262,376],[0,188],[247,94],[233,94],[247,376],[0,188],
+    [196,376],[0,188],[220,188],[262,376],[0,188],[294,188],
+    [294,752],[0,376],
+    [147,94],[0,94],[147,94],[0,94],[147,188],[0,188],[220,188],[0,188],
+    [196,94],[0,94],[196,94],[0,94],[196,188],[0,188],[247,188],[0,188],
+    [175,94],[0,94],[175,94],[0,94],[175,188],[0,188],[233,188],[0,188],
+    [147,752],[0,376],
+    [440,188],[0,188],[392,188],[0,188],[349,188],[0,188],[330,188],[0,188],
+    [311,188],[0,188],[294,188],[0,188],[262,188],[0,188],[247,188],[0,188],
+    [220,376],[0,188],[262,94],[294,94],[330,376],[0,188],
+    [147,752],[0,376],
+  ];
   const TR={
     explore:{voices:[{wave:'square',vol:.058,seq:EX_MEL},{wave:'triangle',vol:.046,seq:EX_BAS},{wave:'sawtooth',vol:.011,seq:EX_ARP}]},
     battle: {voices:[{wave:'square',vol:.054,seq:BA_MEL},{wave:'triangle',vol:.048,seq:BA_BAS},{wave:'square',  vol:.018,seq:BA_CTR}]},
     minigame:{voices:[{wave:'square',vol:.050,seq:MG_MEL},{wave:'triangle',vol:.043,seq:MG_BAS}]},
+    map2:   {voices:[{wave:'square',vol:.062,seq:M2_MEL},{wave:'triangle',vol:.052,seq:M2_BAS},{wave:'sawtooth',vol:.026,seq:M2_CTR}]},
   };
   function _voice(v,id){
     let i=0;
@@ -1446,7 +1696,7 @@ function enterMap(){
   document.getElementById('hud').classList.remove('off');
   document.getElementById('minimap').classList.remove('off');
   if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)||navigator.maxTouchPoints>1){document.getElementById('dpad').style.display='block';document.getElementById('gamebtns').style.display='block';}
-  MUS.play('explore');
+  MUS.play(curMap===2?'map2':'explore');
   updateHUD();
 }
 
@@ -1454,7 +1704,8 @@ function enterMap(){
 function checkZones(){
   if(isBusy||gameState!=='map')return;
   const tx=Math.floor(P.wx/TS),ty=Math.floor(P.wy/TS);
-  for(const z of ZONES){
+  const activeZones=curMap===2?ZONES2:ZONES;
+  for(const z of activeZones){
     if(tx>=z.tx&&tx<z.tx+z.w&&ty>=z.ty&&ty<z.ty+z.h){
       if(z===promptZone)return;
       promptZone=z;showZonePrompt(z);return;
@@ -1497,7 +1748,7 @@ function enterZone(){
   if(z.dorm){G.showDorm();return;}
   if(z.quidditch){QG.open();return;}
   if(z.minigame==='spell'){SP.open();return;}
-  const cfg=ZONE_ENC[z.id];if(!cfg){toast('Peaceful here...');return;}
+  const cfg=(curMap===2?ZONE_ENC2:ZONE_ENC)[z.id];if(!cfg){toast('Peaceful here...');return;}
   const bossReady=cfg.boss&&!P.defeatedBosses.includes(cfg.boss)&&P.year>=(cfg.bossYear||99);
   if(bossReady){startBattle(cfg.boss);return;}
   // Filter enc pool by time of day: night=0.80-0.20, day=0.27-0.70, twilight allows both
@@ -1885,8 +2136,8 @@ function sanitizePlayer(p){
   p.spells.forEach(function(k){if(p.equippedSpells.length<6&&!p.equippedSpells.includes(k))p.equippedSpells.push(k);});
   p.studiedToday=false;return p;
 }
-function saveGame(){if(!P)return;const n=getActiveSlot();localStorage.setItem(slotKey(n),JSON.stringify({player:P,savedAt:Date.now()}));}
-function loadSave(){migrateOldSave();const n=getActiveSlot();const d=getSlotData(n);if(!d)return null;return sanitizePlayer(d.player||d);}
+function saveGame(){if(!P)return;const n=getActiveSlot();localStorage.setItem(slotKey(n),JSON.stringify({player:P,curMap:curMap,savedAt:Date.now()}));}
+function loadSave(){migrateOldSave();const n=getActiveSlot();const d=getSlotData(n);if(!d)return null;if(d.curMap)curMap=d.curMap;return sanitizePlayer(d.player||d);}
 function renderSlotList(){
   migrateOldSave();
   const el=document.getElementById('slotListEl');if(!el)return;
@@ -1934,13 +2185,32 @@ function renderSlotList(){
 }
 
 // ── MOVEMENT ─────────────────────────────────────
+let _mapTransiting=false;
+function transitionToMap(n){
+  if(_mapTransiting)return;_mapTransiting=true;
+  setTimeout(function(){_mapTransiting=false;},2500);
+  promptZone=null;document.getElementById('zprompt').style.display='none';
+  if(n===2){
+    curMap=2;P.wx=5*TS;P.wy=21*TS;
+    camX=P.wx-CW/2;camY=P.wy-CH/2;tCX=camX;tCY=camY;
+    MUS.play('map2');toast('🌌 The Wider Wizarding World awaits!',3000);
+  } else {
+    curMap=1;P.wx=(MW-6)*TS;P.wy=44*TS;
+    camX=P.wx-CW/2;camY=P.wy-CH/2;tCX=camX;tCY=camY;
+    MUS.play('explore');toast('🏰 Back to Hogwarts Grounds',3000);
+  }
+  saveGame();
+}
 function tryMove(dx,dy){
   const sp=2.2,m=10;
   const nx=P.wx+dx*sp,ny=P.wy+dy*sp;
-  function ok(x,y){const tx=Math.floor(x/TS),ty=Math.floor(y/TS);if(tx<0||ty<0||tx>=MW||ty>=MH)return false;return WALK.has(MAP[ty]&&MAP[ty][tx]);}
+  const aM=curMap===2?MAP2:MAP;
+  function ok(x,y){const tx=Math.floor(x/TS),ty=Math.floor(y/TS);if(tx<0||ty<0||tx>=MW||ty>=MH)return false;return WALK.has(aM[ty]&&aM[ty][tx]);}
   const pts=[[nx-m,ny-m],[nx+m,ny-m],[nx-m,ny+m],[nx+m,ny+m]];
   if(pts.every(function(p){return ok(p[0],P.wy);}))P.wx=nx;
   if(pts.every(function(p){return ok(P.wx,p[1]);}))P.wy=ny;
+  if(curMap===1&&Math.floor(P.wx/TS)>=97&&dx>0)transitionToMap(2);
+  if(curMap===2&&Math.floor(P.wx/TS)<=2&&dx<0)transitionToMap(1);
 }
 
 // ── GLOBAL CONTROLLER ────────────────────────────
@@ -1987,7 +2257,7 @@ const G={
   loadGame:function(){
     migrateOldSave();const n=getActiveSlot();const d=getSlotData(n);
     if(!d){toast('No save in Slot '+n+'! Use Load / Manage Saves.');return;}
-    P=sanitizePlayer(d.player||d);if(!AC)initAudio();
+    P=sanitizePlayer(d.player||d);if(d.curMap)curMap=d.curMap;if(!AC)initAudio();
     document.getElementById('titleScr').classList.add('off');
     toast('Welcome back, '+P.name+'! (Slot '+n+')');initWorld();
   },
@@ -2005,7 +2275,7 @@ const G={
   },
   loadFromSlot:function(n){
     const data=getSlotData(n);if(!data){toast('Slot '+n+' is empty!');return;}
-    setActiveSlot(n);P=sanitizePlayer(data.player||data);if(!AC)initAudio();
+    setActiveSlot(n);P=sanitizePlayer(data.player||data);if(data.curMap)curMap=data.curMap;if(!AC)initAudio();
     document.getElementById('slotScr').classList.add('off');
     document.getElementById('titleScr').classList.add('off');
     toast('Welcome back, '+P.name+'! (Slot '+n+')');initWorld();
@@ -2311,7 +2581,7 @@ function drawMissionWaypoint(now){
   wctx.textAlign='center';
 
   missions.forEach((m,idx)=>{
-    const z=ZONES.find(zn=>zn.id===m.zone);
+    const z=[...ZONES,...ZONES2].find(zn=>zn.id===m.zone);
     if(!z)return;
     const wzx=z.tx*TS+z.w*TS/2, wzy=z.ty*TS+z.h*TS/2;
     const sx=wzx-camX, sy=wzy-camY;
@@ -2404,13 +2674,13 @@ function loop(now){
 
   // Render
   wctx.clearRect(0,0,CW,CH);
-  wctx.drawImage(mapOff,-Math.round(camX),-Math.round(camY));
+  wctx.drawImage(curMap===2?mapOff2:mapOff,-Math.round(camX),-Math.round(camY));
   drawAnimated(now);
   drawBeacons(now);
 
-  // NPCs + Owls
+  // NPCs + Owls (map 1 only)
   updateNPCs(now);drawNPCs(now);
-  OWLS.update(now);OWLS.draw(now);
+  if(curMap===1){OWLS.update(now);OWLS.draw(now);}
 
   // Player shadow + sprite
   const px=Math.round(P.wx-camX),py=Math.round(P.wy-camY);
@@ -2882,7 +3152,7 @@ const OWLS={
 };
 
 function updateNPCs(now){
-  if(!MAP||!activeNPCs.length||now-lastNPCTime<90)return;
+  if(curMap!==1||!MAP||!activeNPCs.length||now-lastNPCTime<90)return;
   lastNPCTime=now;
   activeNPCs.forEach(npc=>{
     if(--npc.wt>0||Math.random()<.5)return;
@@ -2897,7 +3167,7 @@ function updateNPCs(now){
   });
 }
 function drawNPCs(now){
-  if(!activeNPCs.length)return;
+  if(curMap!==1||!activeNPCs.length)return;
   wctx.textAlign='center';
   let challengeVisible=false;
   activeNPCs.forEach((npc,i)=>{
