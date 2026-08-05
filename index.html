@@ -185,6 +185,14 @@ canvas{display:block}
   <button class="zbtn no" onclick="G.closePrompt()">Back</button>
 </div>
 
+<div id="animalPrompt" style="display:none;position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:65;background:rgba(4,14,4,.96);border:2px solid #557722;border-radius:10px;padding:12px 20px;text-align:center;min-width:230px;max-width:300px;font-family:'Cinzel',serif;box-shadow:0 4px 20px #000a">
+  <div id="apIcon" style="font-size:30px;line-height:1.3"></div>
+  <div id="apName" style="color:#aadd55;font-weight:700;font-size:13px;margin:2px 0"></div>
+  <div id="apTrust" style="color:#888;font-size:10px;margin-bottom:8px;line-height:1.5"></div>
+  <button class="zbtn" style="background:linear-gradient(135deg,#1a3a0a,#2d6010);border-color:#557722" onclick="approachAnimal()">🤝 Approach</button>
+  <button class="zbtn no" onclick="document.getElementById('animalPrompt').style.display='none'">Leave</button>
+</div>
+
 <div id="npcPrompt" style="position:fixed;bottom:210px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(5,2,16,.97);border:2px solid var(--gold);border-radius:8px;padding:14px 22px;text-align:center;font-family:'Cinzel',serif;display:none;min-width:260px;max-width:340px;box-shadow:0 4px 24px #0008">
   <div id="npcPIcon" style="font-size:26px;margin-bottom:3px"></div>
   <div id="npcPName" style="color:var(--gold);font-size:13px;font-weight:700;margin-bottom:4px"></div>
@@ -1231,6 +1239,15 @@ const COMPANIONS={
   niffler:    {name:'Niffler',     icon:'🦔',color:'#44332a',desc:'Treasure hunter. +20% gold from all battles.',  effect:'gold_boost'},
   fawkes:     {name:'Fawkes',      icon:'🔥',color:'#ff4400',desc:'Dumbledore\'s phoenix. Heals 25 HP each turn.', effect:'phoenix_heal'},
 };
+const WILD_ANIMALS=[
+  {id:'hedgehog',name:'Hedgehog',   icon:'🦔',map:1,tx:41,ty:31,trustNeeded:3,effect:'spike',   effectDesc:'Curls into a spike-ball, dealing 12 damage to the enemy!'},
+  {id:'owl',     name:'Barn Owl',   icon:'🦉',map:1,tx:14,ty:5, trustNeeded:3,effect:'distract',effectDesc:'Swoops at the enemy so their attack misses completely!'},
+  {id:'toad',    name:'Trevor',     icon:'🐸',map:1,tx:60,ty:49,trustNeeded:2,effect:'mp',      effectDesc:'Croaks soothingly and restores 12 MP each turn.'},
+  {id:'fox',     name:'Forest Fox', icon:'🦊',map:1,tx:19,ty:57,trustNeeded:4,effect:'dodge',   effectDesc:'Leaps in front and takes the hit — attack fully dodged!'},
+  {id:'doe',     name:'Silver Doe', icon:'🦌',map:2,tx:83,ty:36,trustNeeded:4,effect:'cleanse', effectDesc:'Shimmers with silver light, clearing all your status effects.'},
+  {id:'raven',   name:'Ink Raven',  icon:'🐦',map:2,tx:24,ty:55,trustNeeded:3,effect:'distract',effectDesc:'Pecks at the enemy relentlessly — they miss their attack!'},
+];
+const ANIMAL_TRUST_MAX=5;
 const CHOCO_CARDS=[
   {id:'dumbledore', name:'Albus Dumbledore',   icon:'🧙',  desc:'Greatest wizard of the age. Defeated Grindelwald 1945.'},
   {id:'merlin',     name:'Merlin',              icon:'⭐',  desc:'The most famous wizard of all time. Order of Merlin founded in his honour.'},
@@ -1286,7 +1303,7 @@ function mkPlayer(name,house,gender){
     hp:0,mp:0,atk:18,def:8,crit:(h.bonuses.critChance||.05),
     spells:['lumos','expelliarmus','stupefy'],
     inventory:{wiggenweld:2},status:[],defeatedBosses:[],
-    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],activeMissions:[],companions:[],chocoCards:[],mirrorSeen:false,swordFound:false,wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
+    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],activeMissions:[],companions:[],chocoCards:[],mirrorSeen:false,swordFound:false,animalTrust:{},animalFollowers:[],wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
   pl.hp=pl.maxHp;pl.mp=pl.maxMp;
   if(house==='h')pl.inventory.wiggenweld=(pl.inventory.wiggenweld||0)+3;
   return pl;
@@ -1866,16 +1883,86 @@ function enterZone(){
 
 function closePrompt(){document.getElementById('zprompt').style.display='none';promptZone=null;}
 
+// ── ANIMAL INTERACTION SYSTEM ─────────────────────
+let promptAnimalId=null;
+const animalSessionUsed={};
+function checkAnimals(){
+  if(isBusy||gameState!=='map')return;
+  const px=Math.floor(P.wx/TS),py=Math.floor(P.wy/TS);
+  const near=WILD_ANIMALS.find(a=>a.map===curMap&&!(P.animalFollowers&&P.animalFollowers.includes(a.id))&&Math.abs(px-a.tx)+Math.abs(py-a.ty)<=2);
+  const ap=document.getElementById('animalPrompt');
+  if(near){
+    promptAnimalId=near.id;
+    const trust=(P.animalTrust&&P.animalTrust[near.id])||0;
+    document.getElementById('apIcon').textContent=near.icon;
+    document.getElementById('apName').textContent=near.name;
+    document.getElementById('apTrust').textContent='Trust: '+'★'.repeat(trust)+'☆'.repeat(ANIMAL_TRUST_MAX-trust)+'  ('+trust+'/'+ANIMAL_TRUST_MAX+')\n'+near.effectDesc;
+    ap.style.display='block';
+  } else {
+    promptAnimalId=null;
+    ap.style.display='none';
+  }
+}
+function approachAnimal(){
+  if(!promptAnimalId)return;
+  document.getElementById('animalPrompt').style.display='none';
+  const a=WILD_ANIMALS.find(x=>x.id===promptAnimalId);if(!a)return;
+  if(animalSessionUsed[a.id]){toast(a.icon+' '+a.name+' needs a little time to warm up. Come back later!',2500);return;}
+  animalSessionUsed[a.id]=true;
+  if(!P.animalTrust)P.animalTrust={};
+  const newTrust=Math.min(ANIMAL_TRUST_MAX,(P.animalTrust[a.id]||0)+1);
+  P.animalTrust[a.id]=newTrust;
+  sfx('heal');
+  if(newTrust>=ANIMAL_TRUST_MAX&&!P.animalFollowers.includes(a.id)){
+    P.animalFollowers.push(a.id);
+    toast(a.icon+' '+a.name+' trusts you completely and will follow you everywhere!\n✨ Battle effect: '+a.effectDesc,6000);
+    spawnParts('#88dd44',28,CW/2,CH/2);
+  } else {
+    const lines=['sniffs your hand curiously.','edges a little closer.','lets you pet it gently.','nuzzles against you warmly.'];
+    toast(a.icon+' '+a.name+' '+lines[Math.min(newTrust-1,lines.length-1)]+' (Trust: '+newTrust+'/'+ANIMAL_TRUST_MAX+')',3500);
+  }
+  saveGame();
+}
+function drawWildAnimals(now){
+  // World-positioned animals (unfollowed)
+  WILD_ANIMALS.forEach(a=>{
+    if(a.map!==curMap)return;
+    if(P.animalFollowers&&P.animalFollowers.includes(a.id))return;
+    const wx=a.tx*TS+TS/2-camX, wy=a.ty*TS+TS/2-camY;
+    if(wx<-48||wx>CW+48||wy<-48||wy>CH+48)return;
+    const bob=Math.sin(now*.0025+a.tx*0.7)*3;
+    wctx.save();wctx.font='22px serif';wctx.textAlign='center';wctx.textBaseline='middle';
+    wctx.fillText(a.icon,wx,wy+bob);
+    const trust=(P.animalTrust&&P.animalTrust[a.id])||0;
+    if(trust>0){wctx.font='9px serif';wctx.fillStyle='#aadd44';wctx.fillText('★'.repeat(trust),wx,wy-16+bob);}
+    wctx.restore();
+  });
+  // Followers trail behind the player
+  if(!P.animalFollowers||!P.animalFollowers.length)return;
+  const dirOff={up:{dx:0,dy:1},down:{dx:0,dy:-1},left:{dx:1,dy:0},right:{dx:-1,dy:0}};
+  const off=dirOff[P.dir]||{dx:0,dy:1};
+  const px=Math.round(P.wx-camX),py=Math.round(P.wy-camY);
+  P.animalFollowers.forEach((id,i)=>{
+    const a=WILD_ANIMALS.find(x=>x.id===id);if(!a)return;
+    const dist=26*(i+1);
+    const bob=Math.sin(now*.004+i*1.5)*4;
+    wctx.save();wctx.font='20px serif';wctx.textAlign='center';wctx.textBaseline='middle';
+    wctx.fillText(a.icon,px+off.dx*dist,py+off.dy*dist+bob);
+    wctx.restore();
+  });
+}
+
 // ── BATTLE ───────────────────────────────────────
 let BS=null,btlBusy=false;
 
 function startBattle(eKey){
   const ed=ENEMIES[eKey];if(!ed)return;
   isBusy=true;gameState='battle';MUS.play('battle');
-  BS={enemy:{...ed,curHp:ed.hp,status:[],atkDeb:0},eKey,playerShield:false,wardUsed:false};
+  BS={enemy:{...ed,curHp:ed.hp,status:[],atkDeb:0},eKey,playerShield:false,wardUsed:false,animalHelpUsed:[]};
   P.status=[];
   document.getElementById('battleScr').classList.remove('off');
   document.getElementById('zprompt').style.display='none';
+  document.getElementById('animalPrompt').style.display='none';
   document.getElementById('npcPrompt').style.display='none';activeNPCChallenge=null;
   document.getElementById('eport').textContent=ed.icon;
   document.getElementById('eport').style.filter='drop-shadow(0 0 20px '+(ed.color||'#cc4444')+')';
@@ -2129,6 +2216,22 @@ function enemyTurn(){
       case'wail':addLog('🌫️ The banshee\'s wail freezes you in terror!','ld');P.mp=Math.max(0,P.mp-22);break;
       default:addLog('⚡ '+e.name+' attacks!','le_');
     }
+    // Animal followers intervene (22% chance per follower, once per battle each)
+    if(P.animalFollowers&&P.animalFollowers.length&&!skip){
+      P.animalFollowers.forEach(function(id){
+        if(!BS.animalHelpUsed)BS.animalHelpUsed=[];
+        if(BS.animalHelpUsed.includes(id)||Math.random()>=0.22)return;
+        const fa=WILD_ANIMALS.find(function(x){return x.id===id;});if(!fa)return;
+        BS.animalHelpUsed.push(id);
+        switch(fa.effect){
+          case'spike':{const sd=12;BS.enemy.curHp=Math.max(0,BS.enemy.curHp-sd);addLog(fa.icon+' '+fa.name+' spikes the enemy for '+sd+' damage!','ls');break;}
+          case'distract':{skip=true;addLog(fa.icon+' '+fa.name+' distracts '+e.name+'! Attack misses!','ls');break;}
+          case'mp':{P.mp=Math.min(P.maxMp,P.mp+12);addLog(fa.icon+' '+fa.name+' restores 12 MP!','lh');break;}
+          case'dodge':{skip=true;addLog(fa.icon+' '+fa.name+' leaps in front — attack dodged!','ls');break;}
+          case'cleanse':{P.status=[];addLog(fa.icon+' '+fa.name+' clears all your status effects!','ls');break;}
+        }
+      });
+    }
     if(!skip){
       if(B._blockPressed){const bl=Math.floor(dmg*.5);dmg=Math.max(0,dmg-bl);addLog('🛡️ Blocked! −'+bl+' damage!','ls');}
       if(BS.playerShield){const bl=Math.floor(dmg*.6);dmg-=bl;BS.playerShield=false;addLog('🛡️ Protego blocks '+bl+'!','ls');}
@@ -2226,7 +2329,7 @@ function setActiveSlot(n){localStorage.setItem('hpa2_active',String(n));}
 function getSlotData(n){const r=localStorage.getItem(slotKey(n));return r?JSON.parse(r):null;}
 function migrateOldSave(){const old=localStorage.getItem('hpa2');if(!old)return;try{const p=JSON.parse(old);if(!getSlotData(1))localStorage.setItem(slotKey(1),JSON.stringify({player:p,savedAt:Date.now()}));}catch(e){}localStorage.removeItem('hpa2');}
 function sanitizePlayer(p){
-  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};if(!p.activeMissions){p.activeMissions=p.activeMission?[p.activeMission]:[];}delete p.activeMission;if(!p.companions)p.companions=[];if(!p.chocoCards)p.chocoCards=[];if(p.mirrorSeen===undefined)p.mirrorSeen=false;if(p.swordFound===undefined)p.swordFound=false;
+  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};if(!p.activeMissions){p.activeMissions=p.activeMission?[p.activeMission]:[];}delete p.activeMission;if(!p.companions)p.companions=[];if(!p.chocoCards)p.chocoCards=[];if(p.mirrorSeen===undefined)p.mirrorSeen=false;if(p.swordFound===undefined)p.swordFound=false;if(!p.animalTrust)p.animalTrust={};if(!p.animalFollowers)p.animalFollowers=[];
   // Rebuild equippedSpells
   if(!p.equippedSpells||!p.equippedSpells.length)p.equippedSpells=p.spells.slice(0,6);
   p.equippedSpells=p.equippedSpells.filter(function(k){return p.spells.includes(k);});
@@ -2776,6 +2879,7 @@ function loop(now){
   } else walkFrame=0;
 
   checkZones();
+  checkAnimals();
 
   tCX=Math.max(0,Math.min(MW*TS-CW,P.wx-CW/2));
   tCY=Math.max(0,Math.min(MH*TS-CH,P.wy-CH/2));
@@ -2791,6 +2895,7 @@ function loop(now){
   updateNPCs(now);drawNPCs(now);
   if(curMap===1){OWLS.update(now);OWLS.draw(now);}
   if(curMap===2){updateMap2NPCs(now);drawMap2NPCs(now);}
+  drawWildAnimals(now);
 
   // Player shadow + sprite
   const px=Math.round(P.wx-camX),py=Math.round(P.wy-camY);
