@@ -1231,6 +1231,18 @@ const COMPANIONS={
   niffler:    {name:'Niffler',     icon:'🦔',color:'#44332a',desc:'Treasure hunter. +20% gold from all battles.',  effect:'gold_boost'},
   fawkes:     {name:'Fawkes',      icon:'🔥',color:'#ff4400',desc:'Dumbledore\'s phoenix. Heals 25 HP each turn.', effect:'phoenix_heal'},
 };
+const CHOCO_CARDS=[
+  {id:'dumbledore', name:'Albus Dumbledore',   icon:'🧙',  desc:'Greatest wizard of the age. Defeated Grindelwald 1945.'},
+  {id:'merlin',     name:'Merlin',              icon:'⭐',  desc:'The most famous wizard of all time. Order of Merlin founded in his honour.'},
+  {id:'circe',      name:'Circe',               icon:'🌀',  desc:'Ancient sorceress who transformed enemies into animals.'},
+  {id:'morgana',    name:'Morgana',             icon:'🌙',  desc:'Dark enchantress of legend. Listed in the Sorcerers of Danger classification.'},
+  {id:'paracelsus', name:'Paracelsus',          icon:'⚗️',  desc:'Celebrated alchemist and healer. Pioneer of magical medicines.'},
+  {id:'ptolemy',    name:'Ptolemy',             icon:'🔭',  desc:'Wizard astronomer whose star charts are still studied at Hogwarts.'},
+  {id:'hengist',    name:'Hengist of Woodcroft',icon:'🏰',  desc:'Founded Hogsmeade village to escape Muggle persecution.'},
+  {id:'agrippa',    name:'Cornelius Agrippa',   icon:'📜',  desc:'Famous wizard imprisoned by Muggles for his writings.'},
+  {id:'flamel',     name:'Nicolas Flamel',      icon:'🪨',  desc:'Creator of the Philosopher\'s Stone. Lived for 665 years.'},
+  {id:'rowena',     name:'Rowena Ravenclaw',    icon:'🦅',  desc:'Co-founder of Hogwarts. Her enchanted diadem grants wisdom.'},
+];
 // ── MAP 2 NPCS ────────────────────────────────────
 const MAP2_NPCS=[
   {name:'Tonks',          icon:'🧝‍♀️',color:'#ff44cc',home:{x:48,y:22},wanderR:3,
@@ -1274,7 +1286,7 @@ function mkPlayer(name,house,gender){
     hp:0,mp:0,atk:18,def:8,crit:(h.bonuses.critChance||.05),
     spells:['lumos','expelliarmus','stupefy'],
     inventory:{wiggenweld:2},status:[],defeatedBosses:[],
-    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],activeMissions:[],companions:[],wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
+    luckyNext:false,dW:false,studiedToday:false,perks:[],npcProgress:{},equippedSpells:['lumos','expelliarmus','stupefy'],activeMissions:[],companions:[],chocoCards:[],mirrorSeen:false,swordFound:false,wx:(36.5)*TS,wy:(24.5)*TS,dir:'down'};
   pl.hp=pl.maxHp;pl.mp=pl.maxMp;
   if(house==='h')pl.inventory.wiggenweld=(pl.inventory.wiggenweld||0)+3;
   return pl;
@@ -1368,7 +1380,7 @@ function sfx(t){if(!AC)return;switch(t){
 // 16-bit style: 3 simultaneous voices per track (melody+bass+harmony)
 // [freq_hz, dur_ms] • 0=rest • voices loop independently (SNES-style channel drift)
 const MUS=(function(){
-  let _id=0,_cur=null,_muted=false,_saved=null;
+  let _id=0,_cur=null,_muted=false,_saved=null,_mGain=null;
   // ── Note frequency reference (Hz) ─────────────────────────────────────────
   // E2=82  G2=98  A2=110 B2=123 C3=131 D3=147 E3=165 F#3=185 G3=196 A3=220
   // B3=247 C4=262 D4=294 E4=330 F#4=370 G4=392 A4=440 B4=494 C5=523 D5=587
@@ -1607,7 +1619,8 @@ const MUS=(function(){
     minigame:{voices:[{wave:'square',vol:.050,seq:MG_MEL},{wave:'triangle',vol:.043,seq:MG_BAS}]},
     map2:   {voices:[{wave:'square',vol:.062,seq:M2_MEL},{wave:'triangle',vol:.052,seq:M2_BAS},{wave:'sawtooth',vol:.026,seq:M2_CTR}]},
   };
-  function _voice(v,id){
+  function _killGain(){if(_mGain){try{_mGain.gain.setValueAtTime(0,AC.currentTime);_mGain.disconnect();}catch(e){}}_mGain=null;}
+  function _voice(v,id,mGain){
     let i=0;
     function tick(){
       if(_id!==id)return;
@@ -1615,7 +1628,7 @@ const MUS=(function(){
       const[f,d]=v.seq[i++];
       if(f>0&&AC){try{
         const o=AC.createOscillator(),g=AC.createGain();
-        o.connect(g);g.connect(AC.destination);
+        o.connect(g);g.connect(mGain);
         o.type=v.wave;o.frequency.value=f;
         const t=AC.currentTime;
         g.gain.setValueAtTime(0,t);
@@ -1629,8 +1642,8 @@ const MUS=(function(){
     tick();
   }
   return{
-    play(name){if(_muted||_cur===name)return;initAudio();_cur=name;const id=++_id;const cfg=TR[name];if(cfg)cfg.voices.forEach(v=>_voice(v,id));},
-    stop(){_id++;_cur=null;},
+    play(name){if(_muted||_cur===name)return;initAudio();_killGain();_cur=name;const id=++_id;_mGain=AC.createGain();_mGain.gain.value=1;_mGain.connect(AC.destination);const cfg=TR[name];if(cfg)cfg.voices.forEach(v=>_voice(v,id,_mGain));},
+    stop(){initAudio&&AC?_killGain():null;_id++;_cur=null;},
     mute(){_muted=!_muted;if(_muted){_saved=_cur;this.stop();}else{_cur=null;if(_saved)this.play(_saved);}return _muted;},
     get isMuted(){return _muted;},
   };
@@ -1811,6 +1824,20 @@ function enterZone(){
   if(z.id==='depofmyst'&&P.defeatedBosses.includes('bellatrix')&&P.companions&&!P.companions.includes('fawkes')){
     P.companions.push('fawkes');toast('🔥 Fawkes the Phoenix descends to you! Healing +25 HP each turn in battle.',5000);sfx('heal');saveGame();
   }
+  // ── SECRETS & EASTER EGGS ──────────────────────────
+  if(z.id==='platform934'){toast('🚂 You sprint at the barrier — and sail right through! The scarlet Hogwarts Express hisses steam ahead. All aboard!',5000);}
+  if(z.id==='godrichollow'&&!P.mirrorSeen){
+    P.mirrorSeen=true;
+    const desire=P.level>=15?'Master of all Seven Arts of Magic':'the greatest wizard '+P.house+' ever produced';
+    setTimeout(function(){toast('🪞 The Mirror of Erised shimmers... you see yourself as '+desire+'. Erised stra ehru oyt ube cafru oyt on wohsi.',6000);},400);
+    saveGame();
+  }
+  if(z.id==='frozenpool'&&P.defeatedBosses.includes('nagini')&&!P.swordFound){
+    P.swordFound=true;P.atk+=15;
+    setTimeout(function(){toast('⚔️ The Sword of Gryffindor rises from the frozen pool — it pulls you forward and fits your hand perfectly. Permanent +15 Attack!',6000);sfx('heal');spawnParts('#c9a227',30,CW/2,CH/2);},200);
+    saveGame();
+  }
+  if(z.id==='hallowscave'&&P.defeatedBosses.includes('voldemort')){toast('☠️ The three Deathly Hallows align: the Elder Wand, the Resurrection Stone, the Invisibility Cloak. You are Master of Death.',6000);spawnParts('#cc66ff',40,CW/2,CH/2);}
   if(z.safe){P.hp=P.maxHp;P.mp=P.maxMp;P.status=[];sfx('heal');spawnParts('#44dd88',20,CW/2,CH/2);toast('Fully restored!');updateHUD();saveGame();return;}
   if(z.shop){G.showShop();return;}
   if(z.dorm){G.showDorm();return;}
@@ -2134,6 +2161,7 @@ function endBattle(won,fled){
     addLog('🏆 Defeated '+e.name+'! +'+xp+' XP +'+egold+'G','ls');
     P.gold+=egold;if(e.boss)P.defeatedBosses.push(BS.eKey);
     if(e.final){setTimeout(function(){showEnd(true);},1000);return;}
+    if(curMap===2&&Math.random()<0.12){const unseen=CHOCO_CARDS.filter(c=>!P.chocoCards.includes(c.id));if(unseen.length){const card=unseen[Math.floor(Math.random()*unseen.length)];P.chocoCards.push(card.id);setTimeout(function(){toast('🍫 Chocolate Frog! You got a '+card.icon+' '+card.name+' card! ('+P.chocoCards.length+'/'+CHOCO_CARDS.length+')',4500);},2000);}}
     gainXP(xp);if(currentNPCChallenge)handleNPCChallengeWin(currentNPCChallenge);setTimeout(function(){closeBattle();},1800);
   } else {sfx('die');document.getElementById('battleScr').classList.add('off');showEnd(false);}
 }
@@ -2141,7 +2169,7 @@ function endBattle(won,fled){
 function closeBattle(){
   document.getElementById('battleScr').classList.add('off');
   document.getElementById('battleBagPanel').style.display='none';
-  BS=null;isBusy=false;gameState='map';promptZone=null;currentNPCChallenge=null;updateHUD();saveGame();
+  BS=null;isBusy=false;gameState='map';promptZone=null;currentNPCChallenge=null;updateHUD();saveGame();MUS.play(curMap===2?'map2':'explore');
 }
 
 // ── XP / LEVEL ───────────────────────────────────
@@ -2198,7 +2226,7 @@ function setActiveSlot(n){localStorage.setItem('hpa2_active',String(n));}
 function getSlotData(n){const r=localStorage.getItem(slotKey(n));return r?JSON.parse(r):null;}
 function migrateOldSave(){const old=localStorage.getItem('hpa2');if(!old)return;try{const p=JSON.parse(old);if(!getSlotData(1))localStorage.setItem(slotKey(1),JSON.stringify({player:p,savedAt:Date.now()}));}catch(e){}localStorage.removeItem('hpa2');}
 function sanitizePlayer(p){
-  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};if(!p.activeMissions){p.activeMissions=p.activeMission?[p.activeMission]:[];}delete p.activeMission;if(!p.companions)p.companions=[];
+  if(!p.status)p.status=[];if(!p.defeatedBosses)p.defeatedBosses=[];if(!p.perks)p.perks=[];if(!p.npcProgress)p.npcProgress={};if(!p.activeMissions){p.activeMissions=p.activeMission?[p.activeMission]:[];}delete p.activeMission;if(!p.companions)p.companions=[];if(!p.chocoCards)p.chocoCards=[];if(p.mirrorSeen===undefined)p.mirrorSeen=false;if(p.swordFound===undefined)p.swordFound=false;
   // Rebuild equippedSpells
   if(!p.equippedSpells||!p.equippedSpells.length)p.equippedSpells=p.spells.slice(0,6);
   p.equippedSpells=p.equippedSpells.filter(function(k){return p.spells.includes(k);});
@@ -2428,11 +2456,18 @@ const G={
     if(mascot){mascot.textContent=hd.animal||'';mascot.style.filter='drop-shadow(0 0 8px '+hc+'99)';}
     // Name + stats
     document.getElementById('menuName').textContent=P.name;
+    const horcKeys=['nagini','umbridge','bellatrix','greyback','lucius','voldemort'];
+    const horcDone=horcKeys.filter(k=>P.defeatedBosses.includes(k)).length;
+    const horcBar='█'.repeat(horcDone)+'░'.repeat(horcKeys.length-horcDone);
+    const chocoStr=(P.chocoCards&&P.chocoCards.length)?P.chocoCards.map(id=>{const c=CHOCO_CARDS.find(x=>x.id===id);return c?c.icon:'🍫';}).join(' '):'None yet';
+    const swordStr=P.swordFound?'⚔️ Sword of Gryffindor':P.mirrorSeen?'🪞 Mirror seen':''
     document.getElementById('menuStats').innerHTML=
       '⚡ Level '+P.level+' &nbsp;·&nbsp; Year '+P.year+'<br>'+
       '❤️ '+P.hp+'/'+P.maxHp+' HP &nbsp;·&nbsp; 💎 '+P.mp+'/'+P.maxMp+' MP<br>'+
       '📊 '+P.xp+'/'+P.xpToNext+' XP &nbsp;·&nbsp; 💰 '+P.gold+' G<br>'+
-      '✨ Spells known: '+P.spells.length+' &nbsp;·&nbsp; Equipped: '+(P.equippedSpells||[]).length;
+      '✨ Spells known: '+P.spells.length+' &nbsp;·&nbsp; Equipped: '+(P.equippedSpells||[]).length+'<br>'+
+      '☠️ Horcruxes: <span style="font-family:monospace;color:#cc66ff">'+horcBar+'</span> '+horcDone+'/'+horcKeys.length+'<br>'+
+      '🍫 Frog Cards: '+chocoStr+(P.chocoCards&&P.chocoCards.length?' ('+P.chocoCards.length+'/'+CHOCO_CARDS.length+')':'')+(swordStr?' &nbsp;·&nbsp; '+swordStr:'');
     document.getElementById('mHpBar').style.width=Math.max(0,P.hp/P.maxHp*100)+'%';
     document.getElementById('mMpBar').style.width=Math.max(0,P.mp/P.maxMp*100)+'%';
     // Perks
@@ -3588,7 +3623,7 @@ const SP={
   exit(){
     this.running=false;if(this.raf)cancelAnimationFrame(this.raf);
     document.getElementById('spellScr').classList.add('off');
-    isBusy=false;gameState='map';promptZone=null;updateHUD();MUS.play('explore');
+    isBusy=false;gameState='map';promptZone=null;updateHUD();MUS.play(curMap===2?'map2':'explore');
   }
 };
 
@@ -3925,7 +3960,7 @@ const QG={
   exit(){
     this.running=false;if(this.raf)cancelAnimationFrame(this.raf);
     document.getElementById('quidditchScr').classList.add('off');
-    isBusy=false;gameState='map';promptZone=null;updateHUD();MUS.play('explore');
+    isBusy=false;gameState='map';promptZone=null;updateHUD();MUS.play(curMap===2?'map2':'explore');
   }
 };
 
